@@ -19,6 +19,7 @@ include = ["CHANGELOG.md"]
 python = "^3.9"
 cmem-plugin-base = ">=1.2.0"
 simple-salesforce = "^1.11.6"
+python-soql-parser = "^0.1.11"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.0"
