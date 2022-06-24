@@ -16,6 +16,7 @@ from cmem_plugin_base.dataintegration.parameter.dataset import DatasetParameterT
 from cmem_plugin_base.dataintegration.parameter.multiline import (
     MultilineStringParameterType,
 )
+from cmem_plugin_base.dataintegration.types import BoolParameterType
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
 from cmem_plugin_base.dataintegration.utils import write_to_dataset
 from simple_salesforce import Salesforce, SalesforceMalformedRequest
@@ -73,6 +74,14 @@ The values required to connect salesforce client
             advanced=True,
             default_value=''
         ),
+        PluginParameter(
+            name="parse_soql",
+            label="Parse SOQL",
+            description="Parse SOQL Query before execution",
+            param_type=BoolParameterType(),
+            advanced=True,
+            default_value=True
+        ),
     ]
 )
 class SoqlQuery(WorkflowPlugin):
@@ -86,13 +95,15 @@ class SoqlQuery(WorkflowPlugin):
             security_token: str,
             soql_query: str,
             dataset: str = "",
+            parse_soql: bool = False
     ) -> None:
         self.dataset = dataset
         self.username = username
         self.password = password
         self.security_token = security_token
-        if not validate_soql(soql_query):
-            raise ValueError("SOQL Query is not valid")
+        if parse_soql:
+            if not validate_soql(soql_query):
+                raise ValueError("SOQL Query is not valid")
 
         self.soql_query = soql_query
 
