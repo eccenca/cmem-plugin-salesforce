@@ -1,9 +1,17 @@
 """Salesforce Integration Plugin"""
 import json
+import uuid
 import io
+
 import pyparsing
 
 from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
+from cmem_plugin_base.dataintegration.entity import (
+    EntitySchema,
+    EntityPath,
+    Entity,
+    Entities
+)
 from cmem_plugin_base.dataintegration.parameter.dataset import DatasetParameterType
 from cmem_plugin_base.dataintegration.parameter.multiline import (
     MultilineStringParameterType,
@@ -90,16 +98,58 @@ class SalesforcePlugin(WorkflowPlugin):
 
         self.soql_query = soql_query
 
-    def execute(self, inputs=()):
+    def execute(self, inputs=()) -> Entities:
         salesforce = Salesforce(username=self.username,
                                 password=self.password,
                                 security_token=self.security_token)
 
-        auth = salesforce.headers.get('Authorization')
-        if len(auth) > 0:
+        if len(salesforce.headers.get('Authorization')) > 0:
             try:
+                projections = parse(self.soql_query)['fields']
                 result = salesforce.query(self.soql_query)
+                records = result.pop('records')
+
+                self.log.info("Start Salesforce Plugin")
+                self.log.info(f"Config length: {len(self.config.get())}")
+
+                entities = []
+                for record in records:
+                    entity_uri = f"urn:uuid:{str(uuid.uuid4())}"
+                    values = []
+                    for projection in projections:
+                        values.append([record.pop(f'{projection}')])
+                    entities.append(
+                        Entity(
+                            uri=entity_uri,
+                            values=values
+                        )
+                    )
+
+                paths = []
+                for projection in projections:
+                    path_uri = f"{projection}"
+                    paths.append(
+                        EntityPath(
+                            path=path_uri
+                        )
+                    )
+
+                schema = EntitySchema(
+                    type_uri="https://example.org/vocab/salesforce",
+                    paths=paths,
+                )
+
+                self.log.info(f"Happy to serve "
+                              f"{result.pop('totalSize')} salesforce data.")
                 write_to_dataset(self.dataset,
                                  io.StringIO(json.dumps(result, indent=2)))
+
+                return Entities(entities=entities, schema=schema)
+
             except SalesforceMalformedRequest:
                 self.log.info("Malformed Request")
+                return Entities(entities=[Entity(uri='', values=[])],
+                                schema=EntitySchema(type_uri='', paths=[]))
+        else:
+            return Entities(entities=[Entity(uri='', values=[])],
+                            schema=EntitySchema(type_uri='', paths=[]))
