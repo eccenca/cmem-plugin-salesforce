@@ -19,7 +19,12 @@ from cmem_plugin_base.dataintegration.parameter.multiline import (
 from cmem_plugin_base.dataintegration.types import BoolParameterType
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
 from cmem_plugin_base.dataintegration.utils import write_to_dataset
-from simple_salesforce import Salesforce, SalesforceMalformedRequest
+from simple_salesforce import (
+    Salesforce,
+    SalesforceMalformedRequest,
+    SalesforceLogin,
+    SalesforceAuthenticationFailed
+)
 from python_soql_parser import parse
 
 
@@ -30,6 +35,17 @@ def validate_soql(soql_query: str) -> bool:
         return True
     except pyparsing.ParseException:
         return False
+
+
+def connect_salesforce(username: str, password: str, security_token: str):
+    """ Connect Salesforce"""
+    try:
+        session_id, instance = SalesforceLogin(username=username,
+                                               password=password,
+                                               security_token=security_token)
+        return [session_id, instance]
+    except SalesforceAuthenticationFailed as salesforce_error:
+        return [f'{salesforce_error.code}:{salesforce_error.message}']
 
 
 @Plugin(
@@ -87,7 +103,7 @@ The values required to connect salesforce client
 class SoqlQuery(WorkflowPlugin):
     """Salesforce Integration Plugin"""
 
-    # pylint: disable=R0913
+    # pylint: disable-msg=too-many-arguments
     def __init__(
             self,
             username: str,
@@ -98,6 +114,10 @@ class SoqlQuery(WorkflowPlugin):
             parse_soql: bool = False
     ) -> None:
         self.dataset = dataset
+        connection_response = connect_salesforce(username, password, security_token)
+        if len(connection_response) < 2:
+            raise ValueError(f'{str(connection_response[0])}')
+
         self.username = username
         self.password = password
         self.security_token = security_token
