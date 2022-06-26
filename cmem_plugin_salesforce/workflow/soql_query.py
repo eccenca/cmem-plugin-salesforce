@@ -28,11 +28,7 @@ from simple_salesforce import (
 
 def validate_soql(soql_query: str) -> bool:
     """ Validate SOQL """
-    try:
-        parse(soql_query=soql_query)
-        return True
-    except pyparsing.ParseException:
-        return False
+    parse(soql_query=soql_query)
 
 
 def validate_credentials(username: str, password: str, security_token: str):
@@ -114,8 +110,7 @@ class SoqlQuery(WorkflowPlugin):
         self.password = password
         self.security_token = security_token
         if parse_soql:
-            if not validate_soql(soql_query):
-                raise ValueError("SOQL Query is not valid")
+            validate_soql(soql_query)
 
         self.soql_query = soql_query
 
@@ -124,54 +119,44 @@ class SoqlQuery(WorkflowPlugin):
                                 password=self.password,
                                 security_token=self.security_token)
 
-        if len(salesforce.headers.get('Authorization')) > 0:
-            try:
-                projections = parse(self.soql_query)['fields']
-                result = salesforce.query(self.soql_query)
-                records = result.pop('records')
+        projections = parse(self.soql_query)['fields']
+        result = salesforce.query_all(self.soql_query)
+        records = result.pop('records')
 
-                self.log.info("Start Salesforce Plugin")
-                self.log.info(f"Config length: {len(self.config.get())}")
+        self.log.info("Start Salesforce Plugin")
+        self.log.info(f"Config length: {len(self.config.get())}")
 
-                entities = []
-                for record in records:
-                    entity_uri = f"urn:uuid:{str(uuid.uuid4())}"
-                    values = []
-                    for projection in projections:
-                        values.append([record.pop(f'{projection}')])
-                    entities.append(
-                        Entity(
-                            uri=entity_uri,
-                            values=values
-                        )
-                    )
-
-                paths = []
-                for projection in projections:
-                    path_uri = f"{projection}"
-                    paths.append(
-                        EntityPath(
-                            path=path_uri
-                        )
-                    )
-
-                schema = EntitySchema(
-                    type_uri="https://example.org/vocab/salesforce",
-                    paths=paths,
+        entities = []
+        for record in records:
+            entity_uri = f"urn:uuid:{str(uuid.uuid4())}"
+            values = []
+            for projection in projections:
+                values.append([record.pop(f'{projection}')])
+            entities.append(
+                Entity(
+                    uri=entity_uri,
+                    values=values
                 )
+            )
 
-                self.log.info(f"Happy to serve "
-                              f"{result.pop('totalSize')} salesforce data.")
-                if len(self.dataset) > 0:
-                    write_to_dataset(self.dataset,
-                                     io.StringIO(json.dumps(result, indent=2)))
+        paths = []
+        for projection in projections:
+            path_uri = f"{projection}"
+            paths.append(
+                EntityPath(
+                    path=path_uri
+                )
+            )
 
-                return Entities(entities=entities, schema=schema)
+        schema = EntitySchema(
+            type_uri="https://example.org/vocab/salesforce",
+            paths=paths,
+        )
 
-            except SalesforceMalformedRequest:
-                self.log.info("Malformed Request")
-                return Entities(entities=[Entity(uri='', values=[])],
-                                schema=EntitySchema(type_uri='', paths=[]))
-        else:
-            return Entities(entities=[Entity(uri='', values=[])],
-                            schema=EntitySchema(type_uri='', paths=[]))
+        self.log.info(f"Happy to serve "
+                      f"{result.pop('totalSize')} salesforce data.")
+        if len(self.dataset) > 0:
+            write_to_dataset(self.dataset,
+                             io.StringIO(json.dumps(result, indent=2)))
+
+        return Entities(entities=entities, schema=schema)
