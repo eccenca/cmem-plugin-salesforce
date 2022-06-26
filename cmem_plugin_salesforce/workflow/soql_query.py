@@ -3,7 +3,6 @@ import io
 import json
 import uuid
 
-import pyparsing
 from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
 from cmem_plugin_base.dataintegration.entity import (
     EntitySchema,
@@ -21,12 +20,11 @@ from cmem_plugin_base.dataintegration.utils import write_to_dataset
 from python_soql_parser import parse
 from simple_salesforce import (
     Salesforce,
-    SalesforceMalformedRequest,
     SalesforceLogin
 )
 
 
-def validate_soql(soql_query: str) -> bool:
+def validate_soql(soql_query: str):
     """ Validate SOQL """
     parse(soql_query=soql_query)
 
