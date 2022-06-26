@@ -1,10 +1,9 @@
 """Salesforce Integration Plugin"""
+import io
 import json
 import uuid
-import io
 
 import pyparsing
-
 from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
 from cmem_plugin_base.dataintegration.entity import (
     EntitySchema,
@@ -16,16 +15,15 @@ from cmem_plugin_base.dataintegration.parameter.dataset import DatasetParameterT
 from cmem_plugin_base.dataintegration.parameter.multiline import (
     MultilineStringParameterType,
 )
-from cmem_plugin_base.dataintegration.types import BoolParameterType
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
+from cmem_plugin_base.dataintegration.types import BoolParameterType
 from cmem_plugin_base.dataintegration.utils import write_to_dataset
+from python_soql_parser import parse
 from simple_salesforce import (
     Salesforce,
     SalesforceMalformedRequest,
-    SalesforceLogin,
-    SalesforceAuthenticationFailed
+    SalesforceLogin
 )
-from python_soql_parser import parse
 
 
 def validate_soql(soql_query: str) -> bool:
@@ -37,15 +35,11 @@ def validate_soql(soql_query: str) -> bool:
         return False
 
 
-def connect_salesforce(username: str, password: str, security_token: str):
-    """ Connect Salesforce"""
-    try:
-        session_id, instance = SalesforceLogin(username=username,
-                                               password=password,
-                                               security_token=security_token)
-        return [session_id, instance]
-    except SalesforceAuthenticationFailed as salesforce_error:
-        return [f'{salesforce_error.code}:{salesforce_error.message}']
+def validate_credentials(username: str, password: str, security_token: str):
+    """ Validate Salesforce login credentials"""
+    SalesforceLogin(username=username,
+                    password=password,
+                    security_token=security_token)
 
 
 @Plugin(
@@ -113,11 +107,9 @@ class SoqlQuery(WorkflowPlugin):
             dataset: str = "",
             parse_soql: bool = False
     ) -> None:
-        self.dataset = dataset
-        connection_response = connect_salesforce(username, password, security_token)
-        if len(connection_response) < 2:
-            raise ValueError(f'{str(connection_response[0])}')
+        validate_credentials(username, password, security_token)
 
+        self.dataset = dataset
         self.username = username
         self.password = password
         self.security_token = security_token
