@@ -2,6 +2,7 @@
 import io
 import json
 import uuid
+from collections import OrderedDict
 
 from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
 from cmem_plugin_base.dataintegration.entity import (
@@ -34,6 +35,14 @@ def validate_credentials(username: str, password: str, security_token: str):
     SalesforceLogin(username=username,
                     password=password,
                     security_token=security_token)
+
+
+def get_projections(record: OrderedDict) -> list[str]:
+    """get keys from dict"""
+    projections = list(record)
+    # Remove metadata keys
+    projections.remove('attributes')
+    return projections
 
 
 @Plugin(
@@ -113,23 +122,19 @@ class SoqlQuery(WorkflowPlugin):
         self.soql_query = soql_query
 
     def execute(self, inputs=()) -> Entities:
+        self.log.info("Start Salesforce Plugin")
         salesforce = Salesforce(username=self.username,
                                 password=self.password,
                                 security_token=self.security_token)
 
-        projections = parse(self.soql_query)['fields']
         result = salesforce.query_all(self.soql_query)
         records = result.pop('records')
-
-        self.log.info("Start Salesforce Plugin")
+        projections = get_projections(records[0])
         self.log.info(f"Config length: {len(self.config.get())}")
-
         entities = []
         for record in records:
             entity_uri = f"urn:uuid:{str(uuid.uuid4())}"
-            values = []
-            for projection in projections:
-                values.append([record.pop(f'{projection}')])
+            values = [[f'{record.pop(projection)}'] for projection in projections]
             entities.append(
                 Entity(
                     uri=entity_uri,
@@ -137,15 +142,9 @@ class SoqlQuery(WorkflowPlugin):
                 )
             )
 
-        paths = []
-        for projection in projections:
-            path_uri = f"{projection}"
-            paths.append(
-                EntityPath(
-                    path=path_uri
-                )
-            )
+        paths = [EntityPath(path=projection) for projection in projections]
 
+        # TODO rename type uri
         schema = EntitySchema(
             type_uri="https://example.org/vocab/salesforce",
             paths=paths,
