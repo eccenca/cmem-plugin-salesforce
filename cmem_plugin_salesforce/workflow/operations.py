@@ -96,7 +96,7 @@ class SobjectCreate(WorkflowPlugin):
             record = {}
             i = 0
             for column in columns:
-                record[column] = values[i][0]
+                record[column] = ','.join(values[i])
                 i += 1
 
             data.append(record)
