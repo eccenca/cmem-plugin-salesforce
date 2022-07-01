@@ -64,7 +64,7 @@ class SobjectCreate(WorkflowPlugin):
                                      security_token=self.security_token)
         self.salesforce_object = salesforce_object
 
-    def get_connection(self):
+    def get_connection(self) -> Salesforce:
         """Get salesforce connection object"""
         return self.salesforce
 
@@ -77,14 +77,20 @@ class SobjectCreate(WorkflowPlugin):
 
         return None
 
-    def validate_columns(self, columns):
+    def validate_columns(self, columns: Sequence[str]):
         """Validate the columns name against salesforce object"""
+        # TODO find an alternative to get SFType
+        # pylint: disable=unnecessary-dunder-call
         describe = self.get_connection().__getattr__(self.salesforce_object).describe()
+        # pylint: enable=unnecessary-dunder-call
+
         object_fields = [field['name'] for field in describe['fields']]
         columns_not_available = set(columns)-set(object_fields)
         if len(columns_not_available):
-            raise ValueError(f"Columns {columns_not_available} are "
-                             f"not available in Salesforce Object {self.salesforce_object}")
+            raise ValueError(
+                f'Columns {columns_not_available} are '
+                f'not available in Salesforce Object {self.salesforce_object}'
+            )
 
     def process(self, entities_collection: Entities):
         """Extract the data from entities and create in salesforce"""
@@ -101,8 +107,13 @@ class SobjectCreate(WorkflowPlugin):
 
             data.append(record)
 
-        bulkObjectType: SFBulkType = self.get_connection().bulk.__getattr__(self.salesforce_object)
-        result = bulkObjectType.upsert(data=data, external_id_field='Id')
+        # TODO find an alternative to get SFType
+        # pylint: disable=unnecessary-dunder-call
+        bulk_object_type: SFBulkType = self.get_connection().bulk.__getattr__(
+            self.salesforce_object
+        )
+        # pylint: enable=unnecessary-dunder-call
+        self.log.info(f'Using __getattr__::{type(bulk_object_type)}')
+
+        result = bulk_object_type.upsert(data=data, external_id_field='Id')
         self.log.info(json.dumps(result))
-
-
