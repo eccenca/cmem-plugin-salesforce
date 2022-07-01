@@ -1,9 +1,12 @@
 """Sales force CRUD operations module"""
-import json
-from typing import Sequence, Optional
+import time
+import uuid
+from typing import Sequence, Optional, Any
 
 from cmem_plugin_base.dataintegration.description import PluginParameter, Plugin
-from cmem_plugin_base.dataintegration.entity import Entities
+from cmem_plugin_base.dataintegration.entity import (
+    Entities, Entity, EntityPath, EntitySchema
+)
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
 from cmem_plugin_base.dataintegration.types import StringParameterType
 from simple_salesforce import Salesforce
@@ -72,10 +75,13 @@ class SobjectCreate(WorkflowPlugin):
         if len(inputs) == 0:
             self.log.info('No Entities found')
             return None
+        results = []
         for entities_collection in inputs:
-            self.process(entities_collection)
+            results.extend(
+                 self.process(entities_collection)
+            )
 
-        return None
+        return self.create_entities_from_result(results)
 
     def validate_columns(self, columns: Sequence[str]):
         """Validate the columns name against salesforce object"""
@@ -113,7 +119,31 @@ class SobjectCreate(WorkflowPlugin):
             self.salesforce_object
         )
         # pylint: enable=unnecessary-dunder-call
-        self.log.info(f'Using __getattr__::{type(bulk_object_type)}')
-
         result = bulk_object_type.upsert(data=data, external_id_field='Id')
-        self.log.info(json.dumps(result))
+
+        current_timestamp = round(time.time()) * 1000
+        for res in result:
+            res['timestamp'] = current_timestamp
+
+        return result
+
+    def create_entities_from_result(self, result: list[dict[str, Any]]) -> Entities:
+        """Create entities from result list"""
+        self.log.info('Start of create_entities_from_result')
+        entities = []
+        for record in result:
+            entity_uri = f"urn:uuid:{str(uuid.uuid4())}"
+            values = [[f'{record[key]}'] for key in record]
+            entities.append(
+                Entity(uri=entity_uri, values=values)
+            )
+
+        if len(entities) != 0:
+            paths = [EntityPath(path=key) for key in result[0]]
+
+        schema = EntitySchema(
+            type_uri="https://vocab.eccenca.com/salesforce/result",
+            paths=paths,
+        )
+
+        return Entities(entities=entities, schema=schema)
