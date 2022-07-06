@@ -59,13 +59,17 @@ class SobjectCreate(WorkflowPlugin):
             salesforce_object: str
     ) -> None:
         self.log.info("Salesforce Create Record(s)")
+
+        if salesforce_object is None or salesforce_object == '':
+            raise ValueError('Salesforce Object API Name is required.')
+        self.salesforce_object = salesforce_object
+
         self.username = username
         self.password = password
         self.security_token = security_token
         self.salesforce = Salesforce(username=self.username,
                                      password=self.password,
                                      security_token=self.security_token)
-        self.salesforce_object = salesforce_object
 
     def get_connection(self) -> Salesforce:
         """Get salesforce connection object"""
