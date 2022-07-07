@@ -3,7 +3,9 @@ import io
 import json
 import uuid
 from collections import OrderedDict
+from typing import Sequence
 
+from cmem_plugin_base.dataintegration.context import ExecutionContext
 from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
 from cmem_plugin_base.dataintegration.entity import (
     EntitySchema,
@@ -121,7 +123,8 @@ class SoqlQuery(WorkflowPlugin):
 
         self.soql_query = soql_query
 
-    def execute(self, inputs=()) -> Entities:
+    def execute(self, inputs: Sequence[Entities],
+                context: ExecutionContext) -> Entities:
         self.log.info("Start Salesforce Plugin")
         salesforce = Salesforce(username=self.username,
                                 password=self.password,

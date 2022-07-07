@@ -3,12 +3,12 @@ import time
 import uuid
 from typing import Sequence, Optional, Any
 
+from cmem_plugin_base.dataintegration.context import ExecutionContext
 from cmem_plugin_base.dataintegration.description import PluginParameter, Plugin
 from cmem_plugin_base.dataintegration.entity import (
     Entities, Entity, EntityPath, EntitySchema
 )
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
-from cmem_plugin_base.dataintegration.types import StringParameterType
 from simple_salesforce import Salesforce
 from simple_salesforce.bulk import SFBulkType
 
@@ -44,7 +44,6 @@ The values required to connect salesforce client
             name="salesforce_object",
             label="Object API Name",
             description="""Salesforce Object API Name""",
-            param_type=StringParameterType()
         )
     ]
 )
@@ -75,7 +74,8 @@ class SobjectCreate(WorkflowPlugin):
         """Get salesforce connection object"""
         return self.salesforce
 
-    def execute(self, inputs: Sequence[Entities]) -> Optional[Entities]:
+    def execute(self, inputs: Sequence[Entities],
+                context: ExecutionContext) -> Optional[Entities]:
         if len(inputs) == 0:
             self.log.info('No Entities found')
             return None
