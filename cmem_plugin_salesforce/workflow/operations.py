@@ -3,7 +3,7 @@ import time
 import uuid
 from typing import Sequence, Optional, Any
 
-from cmem_plugin_base.dataintegration.context import ExecutionContext
+from cmem_plugin_base.dataintegration.context import ExecutionContext, ExecutionReport
 from cmem_plugin_base.dataintegration.description import PluginParameter, Plugin
 from cmem_plugin_base.dataintegration.entity import (
     Entities, Entity, EntityPath, EntitySchema
@@ -83,6 +83,13 @@ class SobjectCreate(WorkflowPlugin):
         for entities_collection in inputs:
             results.extend(
                  self.process(entities_collection)
+            )
+            context.report.update(
+                ExecutionReport(
+                    entity_count=len(results),
+                    operation="wait",
+                    operation_desc="entities read",
+                )
             )
 
         return self.create_entities_from_result(results)
