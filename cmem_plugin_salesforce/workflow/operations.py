@@ -1,7 +1,7 @@
 """Sales force CRUD operations module"""
 import time
 import uuid
-from typing import Sequence, Optional, Any
+from typing import Sequence, Optional, Any, Tuple
 
 from cmem_plugin_base.dataintegration.context import ExecutionContext, ExecutionReport
 from cmem_plugin_base.dataintegration.description import PluginParameter, Plugin
@@ -76,10 +76,17 @@ class SobjectCreate(WorkflowPlugin):
 
     def execute(self, inputs: Sequence[Entities],
                 context: ExecutionContext) -> Optional[Entities]:
+        summary: list[Tuple[str, str]] = []
         if len(inputs) == 0:
             self.log.info('No Entities found')
             return None
         results = []
+        context.report.update(
+            ExecutionReport(
+                entity_count=0,
+                operation='wait',
+            )
+        )
         for entities_collection in inputs:
             results.extend(
                  self.process(entities_collection)
@@ -87,12 +94,30 @@ class SobjectCreate(WorkflowPlugin):
             context.report.update(
                 ExecutionReport(
                     entity_count=len(results),
-                    operation="wait",
-                    operation_desc="entities read",
+                    operation='wait',
                 )
             )
+        created, updated, failed, error_messages = self.get_summary_from_result(results)
+        summary.append(('No. of entities created in Salesforce', f'{created}'))
+        summary.append(('No. of entities updated in Salesforce', f'{updated}'))
 
-        return self.create_entities_from_result(results)
+        warnings = []
+        if failed > 0:
+            warnings.append(f'{failed} entities failed to create/update in Salesforce')
+
+        if len(error_messages) > 0:
+            warnings.append(f'Consolidated Errors: {error_messages}')
+
+        context.report.update(
+            ExecutionReport(
+                entity_count=len(results),
+                operation='read',
+                summary=summary,
+                warnings=warnings
+            )
+        )
+        return None
+        # return self.create_entities_from_result(results)
 
     def validate_columns(self, columns: Sequence[str]):
         """Validate the columns name against salesforce object"""
@@ -119,11 +144,13 @@ class SobjectCreate(WorkflowPlugin):
             record = {}
             i = 0
             for column in columns:
-                record[column] = ','.join(values[i])
+                if column.lower() != 'id' or len(values[i]) != 0:
+                    record[column] = ','.join(values[i])
                 i += 1
 
             data.append(record)
 
+        self.log.info(f'Data : {data}')
         # TODO find an alternative to get SFType
         # pylint: disable=unnecessary-dunder-call
         bulk_object_type: SFBulkType = self.get_connection().bulk.__getattr__(
@@ -138,17 +165,16 @@ class SobjectCreate(WorkflowPlugin):
 
         return result
 
-    def create_entities_from_result(self, result: list[dict[str, Any]]) -> Entities:
+    def create_entities_from_result(self, result: list[dict[str, Any]]):
         """Create entities from result list"""
         self.log.info('Start of create_entities_from_result')
         entities = []
         for record in result:
             entity_uri = f"urn:uuid:{str(uuid.uuid4())}"
-            values = [[f'{record[key]}'] for key in record]
+            values: list = [[f'{record[key]}'] for key in record]
             entities.append(
                 Entity(uri=entity_uri, values=values)
             )
-
         if len(entities) != 0:
             paths = [EntityPath(path=key) for key in result[0]]
 
@@ -156,5 +182,24 @@ class SobjectCreate(WorkflowPlugin):
             type_uri="https://vocab.eccenca.com/salesforce/result",
             paths=paths,
         )
-
         return Entities(entities=entities, schema=schema)
+
+    def get_summary_from_result(self, result: list[dict[str, Any]]):
+        """Get summary from result list"""
+        self.log.info('Start of get_summary_from_result')
+        created: int = 0
+        updated: int = 0
+        error: int = 0
+        error_messages: set = set()
+        for record in result:
+            if record['success'] and record['created']:
+                created += 1
+            elif record['success']:
+                updated += 1
+            else:
+                error += 1
+
+            for errors in record['errors']:
+                error_messages.add(f'{errors}')
+
+        return created, updated, error, ",".join(error_messages)
