@@ -17,7 +17,7 @@ from .utils import needs_sf, get_salesforce_config, TestExecutionContext
 SAMPLE_DATA = {
     "FirstName": f"{str(uuid.uuid4())}",
     "LastName": f"{str(uuid.uuid4())}",
-    "Company": "Plugin Test",
+    "Company": f"Plugin Test:{str(uuid.uuid4())}",
 }
 
 
@@ -40,6 +40,7 @@ def cleanup(request):
 
 
 @needs_sf
+@pytest.mark.dependency()
 def test_create_lead(cleanup):
     """Test create new lead record flow"""
     sf_config = get_salesforce_config()
