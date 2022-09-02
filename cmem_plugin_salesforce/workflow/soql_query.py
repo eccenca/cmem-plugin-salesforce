@@ -147,7 +147,7 @@ class SoqlQuery(WorkflowPlugin):
         )
 
         self.log.info(f"Happy to serve " f"{result.pop('totalSize')} salesforce data.")
-        if len(self.dataset) > 0:
+        if self.dataset:
             write_to_dataset(self.dataset, io.StringIO(json.dumps(result, indent=2)))
 
         return Entities(entities=entities, schema=schema)

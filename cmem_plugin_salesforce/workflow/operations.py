@@ -79,7 +79,7 @@ class SobjectCreate(WorkflowPlugin):
         self, inputs: Sequence[Entities], context: ExecutionContext
     ) -> Optional[Entities]:
         summary: list[Tuple[str, str]] = []
-        if len(inputs) == 0:
+        if not inputs:
             self.log.info("No Entities found")
             return None
         results = []
@@ -105,7 +105,7 @@ class SobjectCreate(WorkflowPlugin):
         if failed > 0:
             warnings.append(f"{failed} entities failed to create/update in Salesforce")
 
-        if len(error_messages) > 0:
+        if error_messages:
             warnings.append(f"Consolidated Errors: {error_messages}")
 
         context.report.update(
@@ -128,7 +128,7 @@ class SobjectCreate(WorkflowPlugin):
 
         object_fields = [field["name"] for field in describe["fields"]]
         columns_not_available = set(columns) - set(object_fields)
-        if len(columns_not_available):
+        if columns_not_available:
             raise ValueError(
                 f"Columns {columns_not_available} are "
                 f"not available in Salesforce Object {self.salesforce_object}"
@@ -144,7 +144,7 @@ class SobjectCreate(WorkflowPlugin):
             record = {}
             i = 0
             for column in columns:
-                if column.lower() != "id" or len(values[i]) != 0:
+                if column.lower() != "id" or values[i]:
                     record[column] = ",".join(values[i])
                 i += 1
 
@@ -173,7 +173,7 @@ class SobjectCreate(WorkflowPlugin):
             entity_uri = f"urn:uuid:{str(uuid.uuid4())}"
             values: list = [[f"{record[key]}"] for key in record]
             entities.append(Entity(uri=entity_uri, values=values))
-        if len(entities) != 0:
+        if entities:
             paths = [EntityPath(path=key) for key in result[0]]
 
         schema = EntitySchema(
