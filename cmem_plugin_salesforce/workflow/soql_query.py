@@ -3,13 +3,15 @@ import io
 import json
 import uuid
 from collections import OrderedDict
+from typing import Sequence
 
+from cmem_plugin_base.dataintegration.context import ExecutionContext
 from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
 from cmem_plugin_base.dataintegration.entity import (
     EntitySchema,
     EntityPath,
     Entity,
-    Entities
+    Entities,
 )
 from cmem_plugin_base.dataintegration.parameter.dataset import DatasetParameterType
 from cmem_plugin_base.dataintegration.parameter.multiline import (
@@ -19,36 +21,31 @@ from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
 from cmem_plugin_base.dataintegration.types import BoolParameterType
 from cmem_plugin_base.dataintegration.utils import write_to_dataset
 from python_soql_parser import parse
-from simple_salesforce import (
-    Salesforce,
-    SalesforceLogin
-)
+from simple_salesforce import Salesforce, SalesforceLogin
 
 
 def validate_soql(soql_query: str):
-    """ Validate SOQL """
+    """Validate SOQL"""
     parse(soql_query=soql_query)
 
 
 def validate_credentials(username: str, password: str, security_token: str):
-    """ Validate Salesforce login credentials"""
-    SalesforceLogin(username=username,
-                    password=password,
-                    security_token=security_token)
+    """Validate Salesforce login credentials"""
+    SalesforceLogin(username=username, password=password, security_token=security_token)
 
 
 def get_projections(record: OrderedDict) -> list[str]:
     """get keys from dict"""
     projections = list(record)
     # Remove metadata keys
-    projections.remove('attributes')
+    projections.remove("attributes")
     return projections
 
 
 @Plugin(
     label="Salesforce SOQL Query",
     description="The salesforce plugin is intended as a 2way bridge between "
-                "salesforce and a Knowledge Graph",
+    "salesforce and a Knowledge Graph",
     documentation="""
 The values required to connect salesforce client
 
@@ -77,7 +74,7 @@ The values required to connect salesforce client
             name="soql_query",
             label="SOQL Query",
             description="""SOQL QUERY""",
-            param_type=MultilineStringParameterType()
+            param_type=MultilineStringParameterType(),
         ),
         PluginParameter(
             name="dataset",
@@ -85,7 +82,7 @@ The values required to connect salesforce client
             description="Dateset name to save the response from Salesforce Plugin",
             param_type=DatasetParameterType(dataset_type="json"),
             advanced=True,
-            default_value=''
+            default_value="",
         ),
         PluginParameter(
             name="parse_soql",
@@ -93,22 +90,22 @@ The values required to connect salesforce client
             description="Parse SOQL Query before execution",
             param_type=BoolParameterType(),
             advanced=True,
-            default_value=True
+            default_value=True,
         ),
-    ]
+    ],
 )
 class SoqlQuery(WorkflowPlugin):
     """Salesforce Integration Plugin"""
 
     # pylint: disable-msg=too-many-arguments
     def __init__(
-            self,
-            username: str,
-            password: str,
-            security_token: str,
-            soql_query: str,
-            dataset: str = "",
-            parse_soql: bool = False
+        self,
+        username: str,
+        password: str,
+        security_token: str,
+        soql_query: str,
+        dataset: str = "",
+        parse_soql: bool = False,
     ) -> None:
         validate_credentials(username, password, security_token)
 
@@ -121,26 +118,25 @@ class SoqlQuery(WorkflowPlugin):
 
         self.soql_query = soql_query
 
-    def execute(self, inputs=()) -> Entities:
+    def execute(
+        self, inputs: Sequence[Entities], context: ExecutionContext
+    ) -> Entities:
         self.log.info("Start Salesforce Plugin")
-        salesforce = Salesforce(username=self.username,
-                                password=self.password,
-                                security_token=self.security_token)
+        salesforce = Salesforce(
+            username=self.username,
+            password=self.password,
+            security_token=self.security_token,
+        )
 
         result = salesforce.query_all(self.soql_query)
-        records = result.pop('records')
+        records = result.pop("records")
         projections = get_projections(records[0])
         self.log.info(f"Config length: {len(self.config.get())}")
         entities = []
         for record in records:
             entity_uri = f"urn:uuid:{str(uuid.uuid4())}"
-            values = [[f'{record.pop(projection)}'] for projection in projections]
-            entities.append(
-                Entity(
-                    uri=entity_uri,
-                    values=values
-                )
-            )
+            values = [[f"{record.pop(projection)}"] for projection in projections]
+            entities.append(Entity(uri=entity_uri, values=values))
 
         paths = [EntityPath(path=projection) for projection in projections]
 
@@ -150,10 +146,8 @@ class SoqlQuery(WorkflowPlugin):
             paths=paths,
         )
 
-        self.log.info(f"Happy to serve "
-                      f"{result.pop('totalSize')} salesforce data.")
-        if len(self.dataset) > 0:
-            write_to_dataset(self.dataset,
-                             io.StringIO(json.dumps(result, indent=2)))
+        self.log.info(f"Happy to serve " f"{result.pop('totalSize')} salesforce data.")
+        if self.dataset:
+            write_to_dataset(self.dataset, io.StringIO(json.dumps(result, indent=2)))
 
         return Entities(entities=entities, schema=schema)
