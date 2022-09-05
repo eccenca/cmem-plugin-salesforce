@@ -20,9 +20,9 @@ needs_cmem = pytest.mark.skipif(
     os.environ.get("CMEM_BASE_URI", "") == "", reason="Needs CMEM configuration"
 )
 needs_sf = pytest.mark.skipif(
-    "SF_USERNAME" not in os.environ,
-    "SF_PASSWORD" not in os.environ,
-    "SF_SECURITY_TOKEN" not in os.environ,
+    os.environ.get("SF_USERNAME", "") == "",
+    os.environ.get("SF_PASSWORD", "") == "",
+    os.environ.get("SF_SECURITY_TOKEN", "") == "",
     reason="Needs Salesforce login configuration",
 )
 
