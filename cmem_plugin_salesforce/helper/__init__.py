@@ -7,11 +7,7 @@ class MarkdownLink:
     url: str
     label: str
 
-    def __init__(
-        self,
-        url: str,
-        label: str
-    ) -> None:
+    def __init__(self, url: str, label: str) -> None:
         self.url = url
         self.label = label
 

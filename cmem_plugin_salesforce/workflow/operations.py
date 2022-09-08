@@ -15,27 +15,13 @@ from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
 from simple_salesforce import Salesforce
 from simple_salesforce.bulk import SFBulkType
 
-from cmem_plugin_salesforce.helper import MarkdownLink
+from cmem_plugin_salesforce import (
+    LINKS,
+    USERNAME_DESCRIPTION,
+    SECURITY_TOKEN_DESCRIPTION,
+)
 
-LINKS = {
-    "OBJECT_REFERENCE": MarkdownLink(
-        "https://developer.salesforce.com/docs/atlas.en-us.238.0."
-        "object_reference.meta/object_reference/sforce_api_objects_list.htm",
-        "Salesforce Standard Objects list"
-    ),
-    "LEAD_REFERENCE": MarkdownLink(
-        "https://developer.salesforce.com/docs/atlas.en-us.238.0."
-        "object_reference.meta/object_reference/sforce_api_objects_lead.htm",
-        "Lead Object Reference"
-    )
-}
-
-
-@Plugin(
-    label="Create/Update Salesforce Objects",
-    description="Sends multiple API requests to the Salesforce Object API"
-                " to manipulate data in your organization’s Salesforce account.",
-    documentation=f"""
+PLUGIN_DOCUMENTATION = f"""
 This task retrieves data from an incoming workflow task (such as a SPARQL query),
 and sends multiple API requests to the Salesforce Object API, in order to
 manipulate data in your organization’s Salesforce account.
@@ -46,36 +32,41 @@ configured object type.
 - Each path from the input entity is interpreted as a field from the Salesforce
 data model (refer to  the {LINKS["OBJECT_REFERENCE"]}).
 - The special path `id` is used to identify an object in Salesforce and switch
-between and creation mode (means: If there is **no `id`** -> a new object is created,
-if there is an **`id` available**, an update is done if the object exists).
+between update/creation mode, means:
+  - If there is NO id path available, a new object is created.
+  - If there IS an id path available, an update is done if the object exists.
 
 Example:
 - You want to create new Lead objects based on data from a Knowledge Graph.
 - The {LINKS["LEAD_REFERENCE"]} lists the supported fields, e.g. `FirstName`,
 `LastName` and `Email`.
-- Your input data SPARQL Query is looks like this:
+- Your input SPARQL task looks like this. Note that the variables need
+to match the field strings from the Salesforce data model:
 ```
 SELECT DISTINCT FirstName, LastName, Email ...
 ```
-- You select `Lead` as Object API Name.
-- You create a workflow connection the SPARQL query to this task.
+- You select `Lead` as the Object API Name of this task and you connect both task in
+the workflow in order get the result of the SPARQL task as in input for this task.
 - For each SPARQL result, a new Lead is created.
-""",
+"""
+
+
+@Plugin(
+    label="Create/Update Salesforce Objects",
+    description="Sends multiple API requests to the Salesforce Object API"
+    " to manipulate data in your organization’s Salesforce account.",
+    documentation=PLUGIN_DOCUMENTATION,
     parameters=[
         PluginParameter(
             name="username",
             label="Username",
-            description="Username of the Salesforce Account.",
+            description=USERNAME_DESCRIPTION,
         ),
-        PluginParameter(
-            name="password",
-            label="Password",
-            description="Password of the Salesforce Account.",
-        ),
+        PluginParameter(name="password", label="Password"),
         PluginParameter(
             name="security_token",
             label="Security Token",
-            description="Security Token of the Salesforce Account.",
+            description=SECURITY_TOKEN_DESCRIPTION,
         ),
         PluginParameter(
             name="salesforce_object",
