@@ -23,6 +23,84 @@ from cmem_plugin_base.dataintegration.utils import write_to_dataset
 from python_soql_parser import parse
 from simple_salesforce import Salesforce, SalesforceLogin
 
+from cmem_plugin_salesforce.helper import MarkdownLink
+
+LINKS = {
+    "SOQL_INTRO": MarkdownLink(
+        "https://developer.salesforce.com/docs/atlas.en-us.soql_sosl.meta/"
+        "soql_sosl/sforce_api_calls_soql.htm",
+        "developer.salesforce.com"
+    ),
+    "SOQL_SYNTAX": MarkdownLink(
+        "https://developer.salesforce.com/docs/atlas.en-us.soql_sosl.meta/"
+        "soql_sosl/sforce_api_calls_soql_select.htm",
+        "Salesforce SOQL SELECT Syntax"
+    ),
+    "OBJECT_REFERENCE": MarkdownLink(
+        "https://developer.salesforce.com/docs/atlas.en-us.238.0."
+        "object_reference.meta/object_reference/sforce_api_objects_list.htm",
+        "Salesforce Standard Objects list"
+    ),
+    "DEV_CONSOLE": MarkdownLink(
+        "https://help.salesforce.com/s/articleView?id=sf.code_dev_console.htm&type=5",
+        "Salesforce Developer Console"
+    ),
+    "TOKEN_DOCU": MarkdownLink(
+        "https://help.salesforce.com/"
+        "s/articleView?id=sf.user_security_token.htm&type=5",
+        "Salesforce Reset Token Documentation"
+    )
+}
+
+EXAMPLE_QUERY = "SELECT FIELDS(STANDARD) FROM Lead"  # nosec
+
+PLUGIN_DESCRIPTION = f"""
+This task executes a custom Salesforce Object Query (SOQL)
+and returns sets of tabular data from your organization’s Salesforce account.
+
+> Use the Salesforce Object Query Language (SOQL) to search your organization’s
+> Salesforce data for specific information. SOQL is similar to the SELECT statement in
+> the widely used Structured Query Language (SQL) but is designed specifically for
+> Salesforce data.
+-- <cite>{LINKS["SOQL_INTRO"]}</cite>
+
+SOQL uses the SELECT statement combined with filtering statements to return sets of
+data, which can optionally be ordered. For a complete description of the syntax, see
+{LINKS["SOQL_SYNTAX"]}.
+
+Example: Retrieve all standard fields from all Lead resources.
+
+```
+{EXAMPLE_QUERY}
+```
+
+Please refer to the {LINKS["OBJECT_REFERENCE"]} of the Salesforce Platform data
+model in order to get an overview of the available objects and fields.
+"""
+
+PARSE_SOQL_DESCRIPTION = f"""
+Parse query text for validation.
+
+To avoid mistakes, the plugin tries to validate the given query text before sending it
+to Salesforce. Turn off this feature, in case you are encountering false validation
+errors. You can always validate your query in the {LINKS["DEV_CONSOLE"]}.
+"""
+
+SECURITY_TOKEN_DESCRIPTION = f"""
+In addition to your standard account credentials, you need to provide a security
+token to access your data.
+
+Refer to the {LINKS["TOKEN_DOCU"]} to learn how to retrieve or reset your token.
+"""
+
+SOQL_DESCRIPTION = f"""
+The query text of your SOQL query.
+
+SOQL uses the SELECT statement combined with filtering statements to return sets
+of data, which can optionally be ordered. For a complete description of the syntax,
+see {LINKS["SOQL_SYNTAX"]}.
+"""
+
 
 def validate_soql(soql_query: str):
     """Validate SOQL"""
@@ -43,51 +121,47 @@ def get_projections(record: OrderedDict) -> list[str]:
 
 
 @Plugin(
-    label="Salesforce SOQL Query",
-    description="The salesforce plugin is intended as a 2way bridge between "
-    "salesforce and a Knowledge Graph",
-    documentation="""
-The values required to connect salesforce client
-
-- `dataset`: Dataset to which the data should be written.
-- `username`: Username of the Salesforce Account.
-- `password`: Password of the Salesforce Account.
-- 'security_token': Security Token of the Salesforce Account.
-""",
+    label="SOQL query (Salesforce)",
+    plugin_id="cmem_plugin_salesforce-SoqlQuery",
+    description="Executes a custom Salesforce Object Query (SOQL) to return"
+                " sets of data your organization’s Salesforce account.",
+    documentation=PLUGIN_DESCRIPTION,
     parameters=[
         PluginParameter(
             name="username",
             label="Username",
-            description="Username of the Salesforce Account.",
+            description="Username of the Salesforce Account. This is typically your"
+                        " eMail Address.",
         ),
         PluginParameter(
             name="password",
             label="Password",
-            description="Password of the Salesforce Account.",
         ),
         PluginParameter(
             name="security_token",
             label="Security Token",
-            description="Security Token of the Salesforce Account.",
+            description=SECURITY_TOKEN_DESCRIPTION,
         ),
         PluginParameter(
             name="soql_query",
             label="SOQL Query",
-            description="""SOQL QUERY""",
+            description=SOQL_DESCRIPTION,
             param_type=MultilineStringParameterType(),
         ),
         PluginParameter(
             name="dataset",
             label="Dataset",
-            description="Dateset name to save the response from Salesforce Plugin",
+            description="In addition to have direct output of the fetched entities of"
+                        " your SOQL query, you can directly write the response to a"
+                        " JSON dataset (mostly for debugging purpose).",
             param_type=DatasetParameterType(dataset_type="json"),
             advanced=True,
             default_value="",
         ),
         PluginParameter(
             name="parse_soql",
-            label="Parse SOQL",
-            description="Parse SOQL Query before execution",
+            label="Parse SOQL Query",
+            description=PARSE_SOQL_DESCRIPTION,
             param_type=BoolParameterType(),
             advanced=True,
             default_value=True,
