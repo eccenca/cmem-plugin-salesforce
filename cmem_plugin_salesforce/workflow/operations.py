@@ -15,17 +15,51 @@ from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
 from simple_salesforce import Salesforce
 from simple_salesforce.bulk import SFBulkType
 
+from cmem_plugin_salesforce.helper import MarkdownLink
+
+LINKS = {
+    "OBJECT_REFERENCE": MarkdownLink(
+        "https://developer.salesforce.com/docs/atlas.en-us.238.0."
+        "object_reference.meta/object_reference/sforce_api_objects_list.htm",
+        "Salesforce Standard Objects list"
+    ),
+    "LEAD_REFERENCE": MarkdownLink(
+        "https://developer.salesforce.com/docs/atlas.en-us.238.0."
+        "object_reference.meta/object_reference/sforce_api_objects_lead.htm",
+        "Lead Object Reference"
+    )
+}
+
 
 @Plugin(
-    label="Salesforce Create Record(s)",
-    description="The plugin is used to create records in salesforce",
-    documentation="""
-The values required to connect salesforce client
+    label="Create/Update Salesforce Objects",
+    description="Sends multiple API requests to the Salesforce Object API"
+                " to manipulate data in your organization’s Salesforce account.",
+    documentation=f"""
+This task retrieves data from an incoming workflow task (such as a SPARQL query),
+and sends multiple API requests to the Salesforce Object API, in order to
+manipulate data in your organization’s Salesforce account.
 
-- `username`: Username of the Salesforce Account.
-- `password`: Password of the Salesforce Account.
-- 'security_token': Security Token of the Salesforce Account.
-- 'object' : Salesforce Object API Name
+The working model is:
+- Each entity from the input data is interpreted as a single Salesforce object of the
+configured object type.
+- Each path from the input entity is interpreted as a field from the Salesforce
+data model (refer to  the {LINKS["OBJECT_REFERENCE"]}).
+- The special path `id` is used to identify an object in Salesforce and switch
+between and creation mode (means: If there is **no `id`** -> a new object is created,
+if there is an **`id` available**, an update is done if the object exists).
+
+Example:
+- You want to create new Lead objects based on data from a Knowledge Graph.
+- The {LINKS["LEAD_REFERENCE"]} lists the supported fields, e.g. `FirstName`,
+`LastName` and `Email`.
+- Your input data SPARQL Query is looks like this:
+```
+SELECT DISTINCT FirstName, LastName, Email ...
+```
+- You select `Lead` as Object API Name.
+- You create a workflow connection the SPARQL query to this task.
+- For each SPARQL result, a new Lead is created.
 """,
     parameters=[
         PluginParameter(
