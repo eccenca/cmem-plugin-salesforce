@@ -1,6 +1,6 @@
 # cmem-plugin-salesforce
 
-Salesforce Integration 
+Send or receive data from your organization´s Salesforce account.
 
 ## Development
 

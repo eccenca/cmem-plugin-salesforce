@@ -2,7 +2,7 @@
 name = "cmem-plugin-salesforce"
 version = "0.0.1"
 license = "Apache-2.0"
-description = "Salesforce Integration "
+description = "Send or receive data from your organization´s Salesforce account."
 authors = ["Sai Ranga Reddy Nukala <rangareddy.nukala@eccenca.com>"]
 classifiers = [
     "Development Status :: 4 - Beta",

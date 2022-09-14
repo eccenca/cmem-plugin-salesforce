@@ -1,8 +1,8 @@
 # Changes here will be overwritten by Copier
-_commit: v3.1.1
+_commit: v3.2.0
 _src_path: gh:eccenca/cmem-plugin-template
 author_mail: rangareddy.nukala@eccenca.com
 author_name: Sai Ranga Reddy Nukala
-project_description: 'Salesforce Integration '
+project_description: Send or receive data from your organization´s Salesforce account.
 project_slug: salesforce
 
