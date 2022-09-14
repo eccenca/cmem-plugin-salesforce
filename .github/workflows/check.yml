@@ -1,19 +1,20 @@
+---
 name: check
 
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push or pull request events but only for the "main" and "develop" branch
   push:
-    branches: [ "main", "develop" ]
+    branches: ["main", "develop"]
   pull_request:
-    branches: [ "develop" ]
+    branches: ["main", "develop"]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: debian-latest
     env:
       CMEM_BASE_URI: ${{ secrets.CMEM_BASE_URI }}
       OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
