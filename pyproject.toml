@@ -4,14 +4,14 @@ version = "0.0.0"
 license = "Apache-2.0"
 description = "Send or receive data from your organization´s Salesforce account."
 authors = ["Sai Ranga Reddy Nukala <rangareddy.nukala@eccenca.com>"]
+homepage = "https://github.com/eccenca/cmem-plugin-salesforce"
 classifiers = [
-    "Development Status :: 4 - Beta",
     "Environment :: Plugins",
     "Topic :: Software Development :: Libraries :: Python Modules"
 ]
 readme = "README-public.md"
 keywords = [
-    "eccenca Corporate Memory", "plugin"
+    "eccenca Corporate Memory", "plugin", "Salesforce"
 ]
 
 [tool.poetry.dependencies]
