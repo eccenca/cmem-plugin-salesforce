@@ -23,7 +23,7 @@ from cmem_plugin_salesforce import (
 
 PLUGIN_DOCUMENTATION = f"""
 This task retrieves data from an incoming workflow task (such as a SPARQL query),
-and sends multiple API requests to the Salesforce Object API, in order to
+and sends bulk API requests to the Salesforce Object API, in order to
 manipulate data in your organization’s Salesforce account.
 
 The working model is:
