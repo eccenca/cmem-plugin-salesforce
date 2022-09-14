@@ -35,6 +35,8 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
+
+      - name: Install dynamic versioning plung
         run: |
           poetry self add "poetry-dynamic-versioning[plugin]"
 
