@@ -53,8 +53,7 @@ the workflow in order get the result of the SPARQL task as in input for this tas
 
 @Plugin(
     label="Create/Update Salesforce Objects",
-    description="Sends multiple API requests to the Salesforce Object API"
-    " to manipulate data in your organization’s Salesforce account.",
+    description="Manipulate data in your organization’s Salesforce account.",
     documentation=PLUGIN_DOCUMENTATION,
     parameters=[
         PluginParameter(
