@@ -1,12 +1,16 @@
 ---
-# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
-name: Upload Python Package
+name: publish
 
 on:
-  release:
-    types: [published]
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+  push:
+    tags:  # trigger the deploy job on tag creation
+      - "*"  # Note: not all tags will result in allowed pypi version identifier
+  workflow_run:  # after check workflow is finished
+    workflows: [check]
+    branches: [main"]
+    types:
+      - completed
+  workflow_dispatch:  # allows for manual trigger
 
 permissions:
   contents: read
