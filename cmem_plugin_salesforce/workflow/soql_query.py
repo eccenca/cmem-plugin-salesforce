@@ -29,7 +29,9 @@ from cmem_plugin_salesforce import (
     SECURITY_TOKEN_DESCRIPTION,
 )
 
-EXAMPLE_QUERY = "SELECT FIELDS(STANDARD) FROM Lead"  # nosec
+# fields are not validated by SOQL Parser
+EXAMPLE_FIELDS_QUERY = "SELECT FIELDS(STANDARD) FROM Lead"  # nosec
+EXAMPLE_QUERY = "SELECT Contact.Firstname, Contact.Lastname FROM Contact"  # nosec
 
 PLUGIN_DOCUMENTATION = f"""
 This task executes a custom Salesforce Object Query (SOQL)
@@ -45,8 +47,16 @@ SOQL uses the SELECT statement combined with filtering statements to return sets
 data, which can optionally be ordered. For a complete description of the syntax, see
 {LINKS["SOQL_SYNTAX"]}.
 
-Example: Retrieve all standard fields from all Lead resources.
+In advance section, you can parse the SOQL Query. By default the Parse SOQL
+option is set `True`
 
+Examples:
+
+Retrieve all standard fields from all Lead resources. (without parser validation)
+```
+{EXAMPLE_FIELDS_QUERY}
+```
+Retrieve first name and last name of all Contact resources. (with parser validation)
 ```
 {EXAMPLE_QUERY}
 ```
