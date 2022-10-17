@@ -47,8 +47,8 @@ SOQL uses the SELECT statement combined with filtering statements to return sets
 data, which can optionally be ordered. For a complete description of the syntax, see
 {LINKS["SOQL_SYNTAX"]}.
 
-In advance section, you can parse the SOQL Query. By default the Parse SOQL
-option is set `True`
+In the Advanced Options section, you can enable / disable the validation of your
+SOQL Query. By default, this Parse SOQL option is set `True` (enabled).
 
 Examples:
 
@@ -84,7 +84,14 @@ see {LINKS["SOQL_SYNTAX"]}.
 
 def validate_soql(soql_query: str):
     """Validate SOQL"""
-    parse(soql_query=soql_query)
+    try:
+        parse(soql_query=soql_query)
+    except Exception as error:
+        raise ValueError(
+            "We failed to validate the syntax of your SOQL query. "
+            "Please fix your SOQL query or disable the validation in case you know "
+            "what you do (see advanced options in the task configuration)."
+        ) from error
 
 
 def validate_credentials(username: str, password: str, security_token: str):
