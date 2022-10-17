@@ -29,7 +29,9 @@ from cmem_plugin_salesforce import (
     SECURITY_TOKEN_DESCRIPTION,
 )
 
-EXAMPLE_QUERY = "SELECT FIELDS(STANDARD) FROM Lead"  # nosec
+# fields are not validated by SOQL Parser
+EXAMPLE_FIELDS_QUERY = "SELECT FIELDS(STANDARD) FROM Lead"  # nosec
+EXAMPLE_QUERY = "SELECT Contact.Firstname, Contact.Lastname FROM Contact"  # nosec
 
 PLUGIN_DOCUMENTATION = f"""
 This task executes a custom Salesforce Object Query (SOQL)
@@ -45,8 +47,16 @@ SOQL uses the SELECT statement combined with filtering statements to return sets
 data, which can optionally be ordered. For a complete description of the syntax, see
 {LINKS["SOQL_SYNTAX"]}.
 
-Example: Retrieve all standard fields from all Lead resources.
+In the Advanced Options section, you can enable / disable the validation of your
+SOQL Query. By default, this Parse SOQL option is set `True` (enabled).
 
+Examples:
+
+Retrieve all standard fields from all Lead resources. (without parser validation)
+```
+{EXAMPLE_FIELDS_QUERY}
+```
+Retrieve first name and last name of all Contact resources. (with parser validation)
 ```
 {EXAMPLE_QUERY}
 ```
@@ -74,7 +84,14 @@ see {LINKS["SOQL_SYNTAX"]}.
 
 def validate_soql(soql_query: str):
     """Validate SOQL"""
-    parse(soql_query=soql_query)
+    try:
+        parse(soql_query=soql_query)
+    except Exception as error:
+        raise ValueError(
+            "We failed to validate the syntax of your SOQL query. "
+            "Please fix your SOQL query or disable the validation in case you know "
+            "what you do (see advanced options in the task configuration)."
+        ) from error
 
 
 def validate_credentials(username: str, password: str, security_token: str):
