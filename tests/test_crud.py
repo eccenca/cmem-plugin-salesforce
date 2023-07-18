@@ -66,7 +66,7 @@ def test_soql():
         soql_query=query,
     )
 
-    entities: Entities = soql_query.execute(None, TestExecutionContext)
+    entities = soql_query.execute(None, TestExecutionContext)
     result = get_dict_from_entity(entities.entities[0], entities.schema)
     assert SAMPLE_DATA == result
 
