@@ -129,7 +129,7 @@ def get_projections(record: OrderedDict) -> list[str]:
             param_type=DatasetParameterType(dataset_type="json"),
             advanced=True,
             default_value="",
-        )
+        ),
     ],
 )
 class SoqlQuery(WorkflowPlugin):
