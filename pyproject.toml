@@ -18,7 +18,6 @@ keywords = [
 python = "^3.11"
 cmem-plugin-base = "^4.0.0"
 simple-salesforce = "^1.11.6"
-#python-soql-parser = "^0.1.11"
 
 [tool.poetry.group.dev.dependencies]
 bandit = "^1.7.5"

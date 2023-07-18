@@ -57,7 +57,8 @@ def test_create_lead(cleanup):
 @pytest.mark.dependency(depends=["test_create_lead"])
 def test_soql():
     sf_config = get_salesforce_config()
-    query = f'SELECT {",".join(list(SAMPLE_DATA))} FROM Lead WHERE Company = \'{SAMPLE_DATA["Company"]}\''
+    query = f'SELECT {",".join(list(SAMPLE_DATA))} ' \
+            f'FROM Lead WHERE Company = \'{SAMPLE_DATA["Company"]}\''
     soql_query = SoqlQuery(
         username=sf_config["username"],
         password=sf_config["password"],

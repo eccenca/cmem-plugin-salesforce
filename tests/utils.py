@@ -3,7 +3,6 @@ import os
 from typing import Optional
 
 import pytest
-import requests
 
 from cmem.cmempy.api import get_token
 
