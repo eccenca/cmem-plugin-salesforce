@@ -61,6 +61,9 @@ jobs:
         env:
           CMEM_BASE_URI: ${{ secrets.CMEM_BASE_URI }}
           OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
+          SF_USERNAME: ${{ secrets.SF_USERNAME }}
+          SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
+          SF_SECURITY_TOKEN: ${{ secrets.SF_SECURITY_TOKEN }}
         run: |
           task check:pytest
 
