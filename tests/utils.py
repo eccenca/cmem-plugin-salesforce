@@ -1,12 +1,11 @@
 """Testing utilities."""
 import os
-from typing import Optional
 
 import pytest
-import requests
 
+# check for cmem environment and skip if not present
 from cmem.cmempy.api import get_token
-
+from cmem.cmempy.config import get_oauth_default_credentials
 from cmem_plugin_base.dataintegration.context import (
     PluginContext,
     UserContext,
@@ -15,7 +14,6 @@ from cmem_plugin_base.dataintegration.context import (
     ReportContext,
 )
 
-# check for cmem environment and skip if not present
 needs_cmem = pytest.mark.skipif(
     os.environ.get("CMEM_BASE_URI", "") == "", reason="Needs CMEM configuration"
 )
@@ -40,9 +38,16 @@ class TestUserContext(UserContext):
     """dummy user context that can be used in tests"""
 
     __test__ = False
+    default_credential: dict = {}
 
-    def token(self) -> str:
-        return get_token()["access_token"]
+    def __init__(self):
+        # get access token from default service account
+        if not TestUserContext.default_credential:
+            TestUserContext.default_credential = get_oauth_default_credentials()
+        access_token = get_token(_oauth_credentials=TestUserContext.default_credential)[
+            "access_token"
+        ]
+        self.token = lambda: access_token
 
 
 class TestPluginContext(PluginContext):
@@ -53,10 +58,9 @@ class TestPluginContext(PluginContext):
     def __init__(
         self,
         project_id: str = "dummyProject",
-        user: Optional[UserContext] = TestUserContext(),
     ):
         self.project_id = project_id
-        self.user = user
+        self.user = TestUserContext()
 
 
 class TestTaskContext(TaskContext):
@@ -64,8 +68,9 @@ class TestTaskContext(TaskContext):
 
     __test__ = False
 
-    def __init__(self, project_id: str = "dummyProject"):
+    def __init__(self, project_id: str = "dummyProject", task_id: str = "dummyTask"):
         self.project_id = lambda: project_id
+        self.task_id = lambda: task_id
 
 
 class TestExecutionContext(ExecutionContext):
@@ -73,11 +78,7 @@ class TestExecutionContext(ExecutionContext):
 
     __test__ = False
 
-    def __init__(
-        self,
-        project_id: str = "dummyProject",
-        user: Optional[UserContext] = TestUserContext(),
-    ):
+    def __init__(self, project_id: str = "dummyProject", task_id: str = "dummyTask"):
         self.report = ReportContext()
-        self.task = TestTaskContext(project_id=project_id)
-        self.user = user
+        self.task = TestTaskContext(project_id=project_id, task_id=task_id)
+        self.user = TestUserContext()

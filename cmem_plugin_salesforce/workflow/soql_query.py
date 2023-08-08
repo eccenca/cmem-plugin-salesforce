@@ -18,9 +18,7 @@ from cmem_plugin_base.dataintegration.parameter.multiline import (
     MultilineStringParameterType,
 )
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
-from cmem_plugin_base.dataintegration.types import BoolParameterType
 from cmem_plugin_base.dataintegration.utils import write_to_dataset
-from python_soql_parser import parse
 from simple_salesforce import Salesforce, SalesforceLogin
 
 from cmem_plugin_salesforce import (
@@ -63,7 +61,7 @@ Retrieve first name and last name of all Contact resources. (with parser validat
 
 Please refer to the {LINKS["OBJECT_REFERENCE"]} of the Salesforce Platform data
 model in order to get an overview of the available objects and fields.
-"""
+"""  # nosec
 
 PARSE_SOQL_DESCRIPTION = f"""
 Parse query text for validation.
@@ -80,18 +78,6 @@ SOQL uses the SELECT statement combined with filtering statements to return sets
 of data, which can optionally be ordered. For a complete description of the syntax,
 see {LINKS["SOQL_SYNTAX"]}.
 """
-
-
-def validate_soql(soql_query: str):
-    """Validate SOQL"""
-    try:
-        parse(soql_query=soql_query)
-    except Exception as error:
-        raise ValueError(
-            "We failed to validate the syntax of your SOQL query. "
-            "Please fix your SOQL query or disable the validation in case you know "
-            "what you do (see advanced options in the task configuration)."
-        ) from error
 
 
 def validate_credentials(username: str, password: str, security_token: str):
@@ -144,14 +130,6 @@ def get_projections(record: OrderedDict) -> list[str]:
             advanced=True,
             default_value="",
         ),
-        PluginParameter(
-            name="parse_soql",
-            label="Parse SOQL Query",
-            description=PARSE_SOQL_DESCRIPTION,
-            param_type=BoolParameterType(),
-            advanced=True,
-            default_value=True,
-        ),
     ],
 )
 class SoqlQuery(WorkflowPlugin):
@@ -165,7 +143,6 @@ class SoqlQuery(WorkflowPlugin):
         security_token: str,
         soql_query: str,
         dataset: str = "",
-        parse_soql: bool = False,
     ) -> None:
         validate_credentials(username, password, security_token)
 
@@ -173,9 +150,6 @@ class SoqlQuery(WorkflowPlugin):
         self.username = username
         self.password = password
         self.security_token = security_token
-        if parse_soql:
-            validate_soql(soql_query)
-
         self.soql_query = soql_query
 
     def execute(
