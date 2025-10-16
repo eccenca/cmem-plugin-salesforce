@@ -1,4 +1,4 @@
-""" Helper classes."""
+"""Helper classes."""
 
 
 class MarkdownLink:

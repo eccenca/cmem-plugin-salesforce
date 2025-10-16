@@ -1,23 +1,25 @@
 """Test sobject create plugin and soql plugin with inter dependent salesforce records"""
+
 import uuid
 
 import pytest
 from cmem_plugin_base.dataintegration.entity import (
-    EntityPath,
-    EntitySchema,
     Entities,
     Entity,
+    EntityPath,
+    EntitySchema,
 )
 from simple_salesforce import Salesforce
 
 from cmem_plugin_salesforce.workflow.operations import SobjectCreate
 from cmem_plugin_salesforce.workflow.soql_query import SoqlQuery
-from .utils import needs_sf, get_salesforce_config, TestExecutionContext
+
+from .utils import TestExecutionContext, get_salesforce_config, needs_sf
 
 SAMPLE_DATA = {
-    "FirstName": f"{str(uuid.uuid4())}",
-    "LastName": f"{str(uuid.uuid4())}",
-    "Company": f"Plugin Test:{str(uuid.uuid4())}",
+    "FirstName": f"{uuid.uuid4()!s}",
+    "LastName": f"{uuid.uuid4()!s}",
+    "Company": f"Plugin Test:{uuid.uuid4()!s}",
 }
 
 
@@ -30,9 +32,7 @@ def cleanup(request):
         password=sf_config["password"],
         security_token=sf_config["security_token"],
     )
-    result = sf.query_all(
-        f'SELECT Id from Lead where Company=\'{SAMPLE_DATA["Company"]}\''
-    )
+    result = sf.query_all(f"SELECT Id from Lead where Company='{SAMPLE_DATA['Company']}'")
     if result["totalSize"] != 0:
         data = [{"Id": record["Id"]} for record in result["records"]]
 
@@ -40,7 +40,7 @@ def cleanup(request):
 
 
 @needs_sf
-@pytest.mark.dependency()
+@pytest.mark.dependency
 def test_create_lead(cleanup):
     """Test create new lead record flow"""
     sf_config = get_salesforce_config()
@@ -58,8 +58,7 @@ def test_create_lead(cleanup):
 def test_soql():
     sf_config = get_salesforce_config()
     query = (
-        f'SELECT {",".join(list(SAMPLE_DATA))} '
-        f'FROM Lead WHERE Company = \'{SAMPLE_DATA["Company"]}\''
+        f"SELECT {','.join(list(SAMPLE_DATA))} FROM Lead WHERE Company = '{SAMPLE_DATA['Company']}'"
     )
     soql_query = SoqlQuery(
         username=sf_config["username"],
@@ -70,7 +69,7 @@ def test_soql():
 
     entities = soql_query.execute(None, TestExecutionContext)
     result = get_dict_from_entity(entities.entities[0], entities.schema)
-    assert SAMPLE_DATA == result
+    assert result == SAMPLE_DATA
 
 
 def get_dict_from_entity(entity: Entity, schema: EntitySchema) -> dict:
@@ -81,10 +80,10 @@ def get_dict_from_entity(entity: Entity, schema: EntitySchema) -> dict:
 
 
 def get_lead_entities() -> Entities:
-    """get entities object with lead columns"""
+    """Get entities object with lead columns"""
     projections = list(SAMPLE_DATA)
     entities = []
-    entity_uri = f"urn:uuid:{str(uuid.uuid4())}"
+    entity_uri = f"urn:uuid:{uuid.uuid4()!s}"
     values = [[SAMPLE_DATA[_]] for _ in projections]
     entities.append(Entity(uri=entity_uri, values=values))
     paths = [EntityPath(path=projection) for projection in projections]

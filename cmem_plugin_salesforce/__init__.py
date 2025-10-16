@@ -24,8 +24,7 @@ LINKS = {
         "Salesforce Developer Console",
     ),
     "TOKEN_DOCU": MarkdownLink(
-        "https://help.salesforce.com/"
-        "s/articleView?id=sf.user_security_token.htm&type=5",
+        "https://help.salesforce.com/s/articleView?id=sf.user_security_token.htm&type=5",
         "Salesforce Reset Token Documentation",
     ),
     "LEAD_REFERENCE": MarkdownLink(
@@ -35,9 +34,7 @@ LINKS = {
     ),
 }
 
-USERNAME_DESCRIPTION = (
-    "Username of the Salesforce Account. This is typically your email address."
-)
+USERNAME_DESCRIPTION = "Username of the Salesforce Account. This is typically your email address."
 
 SECURITY_TOKEN_DESCRIPTION = f"""
 In addition to your standard account credentials, you need to provide a security

@@ -1,10 +1,12 @@
 """Sales force CRUD operations module"""
+
 import time
 import uuid
-from typing import Sequence, Optional, Any, Tuple
+from collections.abc import Sequence
+from typing import Any
 
 from cmem_plugin_base.dataintegration.context import ExecutionContext, ExecutionReport
-from cmem_plugin_base.dataintegration.description import PluginParameter, Plugin
+from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
 from cmem_plugin_base.dataintegration.entity import (
     Entities,
     Entity,
@@ -17,8 +19,8 @@ from simple_salesforce.bulk import SFBulkType
 
 from cmem_plugin_salesforce import (
     LINKS,
-    USERNAME_DESCRIPTION,
     SECURITY_TOKEN_DESCRIPTION,
+    USERNAME_DESCRIPTION,
 )
 
 PLUGIN_DOCUMENTATION = f"""
@@ -99,10 +101,8 @@ class SobjectCreate(WorkflowPlugin):
         """Get salesforce connection object"""
         return self.salesforce
 
-    def execute(
-        self, inputs: Sequence[Entities], context: ExecutionContext
-    ) -> Optional[Entities]:
-        summary: list[Tuple[str, str]] = []
+    def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> Entities | None:
+        summary: list[tuple[str, str]] = []
         if not inputs:
             self.log.info("No Entities found")
             return None
@@ -194,7 +194,7 @@ class SobjectCreate(WorkflowPlugin):
         self.log.info("Start of create_entities_from_result")
         entities = []
         for record in result:
-            entity_uri = f"urn:uuid:{str(uuid.uuid4())}"
+            entity_uri = f"urn:uuid:{uuid.uuid4()!s}"
             values: list = [[f"{record[key]}"] for key in record]
             entities.append(Entity(uri=entity_uri, values=values))
         if entities:
