@@ -1,4 +1,4 @@
-"""main packages."""
+"""cmem-plugin-salesforce"""
 
 from cmem_plugin_salesforce.helper import MarkdownLink
 
