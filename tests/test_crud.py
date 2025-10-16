@@ -24,7 +24,7 @@ SAMPLE_DATA = {
 
 
 @pytest.fixture
-def cleanup(request):
+def cleanup(request) -> None:
     """Clean the test records create by test run"""
     sf_config = get_salesforce_config()
     sf = Salesforce(
@@ -41,7 +41,7 @@ def cleanup(request):
 
 @needs_sf
 @pytest.mark.dependency
-def test_create_lead(cleanup):
+def test_create_lead(cleanup) -> None:
     """Test create new lead record flow"""
     sf_config = get_salesforce_config()
     s_object_create = SobjectCreate(
@@ -55,7 +55,7 @@ def test_create_lead(cleanup):
 
 
 @pytest.mark.dependency(depends=["test_create_lead"])
-def test_soql():
+def test_soql() -> None:
     sf_config = get_salesforce_config()
     query = (
         f"SELECT {','.join(list(SAMPLE_DATA))} FROM Lead WHERE Company = '{SAMPLE_DATA['Company']}'"

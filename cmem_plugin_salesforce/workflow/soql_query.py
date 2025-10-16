@@ -81,7 +81,7 @@ see {LINKS["SOQL_SYNTAX"]}.
 """
 
 
-def validate_credentials(username: str, password: str, security_token: str):
+def validate_credentials(username: str, password: str, security_token: str) -> None:
     """Validate Salesforce login credentials"""
     SalesforceLogin(username=username, password=password, security_token=security_token)
 

@@ -6,7 +6,7 @@ from simple_salesforce.exceptions import SalesforceAuthenticationFailed
 from cmem_plugin_salesforce.workflow.soql_query import SoqlQuery
 
 
-def test_invalid_credentials():
+def test_invalid_credentials() -> None:
     """Test plugin execution"""
     with pytest.raises(SalesforceAuthenticationFailed):
         SoqlQuery(

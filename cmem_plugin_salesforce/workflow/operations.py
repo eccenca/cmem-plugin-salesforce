@@ -3,7 +3,7 @@
 import time
 import uuid
 from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from cmem_plugin_base.dataintegration.context import ExecutionContext, ExecutionReport
 from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
@@ -15,13 +15,15 @@ from cmem_plugin_base.dataintegration.entity import (
 )
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
 from simple_salesforce import Salesforce
-from simple_salesforce.bulk import SFBulkType
 
 from cmem_plugin_salesforce import (
     LINKS,
     SECURITY_TOKEN_DESCRIPTION,
     USERNAME_DESCRIPTION,
 )
+
+if TYPE_CHECKING:
+    from simple_salesforce.bulk import SFBulkType
 
 PLUGIN_DOCUMENTATION = f"""
 This task retrieves data from an incoming workflow task (such as a SPARQL query),
@@ -143,7 +145,7 @@ class SobjectCreate(WorkflowPlugin):
         return None
         # return self.create_entities_from_result(results)
 
-    def validate_columns(self, columns: Sequence[str]):
+    def validate_columns(self, columns: Sequence[str]) -> None:
         """Validate the columns name against salesforce object"""
         # TODO find an alternative to get SFType
         # pylint: disable=unnecessary-dunder-call
