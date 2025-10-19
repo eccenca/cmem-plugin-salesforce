@@ -29,14 +29,14 @@ from cmem_plugin_salesforce import (
 )
 
 # fields are not validated by SOQL Parser
-EXAMPLE_FIELDS_QUERY = "SELECT FIELDS(STANDARD) FROM Lead"  # nosec
-EXAMPLE_QUERY = "SELECT Contact.Firstname, Contact.Lastname FROM Contact"  # nosec
+EXAMPLE_FIELDS_QUERY = "SELECT FIELDS(STANDARD) FROM Lead"
+EXAMPLE_QUERY = "SELECT Contact.Firstname, Contact.Lastname FROM Contact"
 
 PLUGIN_DOCUMENTATION = f"""
 This task executes a custom Salesforce Object Query (SOQL)
-and returns sets of tabular data from your organization’s Salesforce account.
+and returns sets of tabular data from your organization's Salesforce account.
 
-> Use the Salesforce Object Query Language (SOQL) to search your organization’s
+> Use the Salesforce Object Query Language (SOQL) to search your organization's
 > Salesforce data for specific information. SOQL is similar to the SELECT statement in
 > the widely used Structured Query Language (SQL) but is designed specifically for
 > Salesforce data.
@@ -62,7 +62,7 @@ Retrieve first name and last name of all Contact resources. (with parser validat
 
 Please refer to the {LINKS["OBJECT_REFERENCE"]} of the Salesforce Platform data
 model in order to get an overview of the available objects and fields.
-"""  # nosec
+"""  # noqa: S608
 
 PARSE_SOQL_DESCRIPTION = f"""
 Parse query text for validation.
@@ -98,7 +98,7 @@ def get_projections(record: OrderedDict) -> list[str]:
     label="SOQL query (Salesforce)",
     plugin_id="cmem_plugin_salesforce-SoqlQuery",
     description="Executes a custom Salesforce Object Query (SOQL) to return"
-    " sets of data your organization’s Salesforce account.",
+    " sets of data your organization's Salesforce account.",
     documentation=PLUGIN_DOCUMENTATION,
     parameters=[
         PluginParameter(
@@ -154,7 +154,9 @@ class SoqlQuery(WorkflowPlugin):
         self.soql_query = soql_query
 
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> Entities:
+        """Execute SOQL query plugin flow"""
         self.log.info("Start Salesforce Plugin")
+        _ = inputs, context
         salesforce = Salesforce(
             username=self.username,
             password=self.password,
@@ -172,8 +174,7 @@ class SoqlQuery(WorkflowPlugin):
             entities.append(Entity(uri=entity_uri, values=values))
 
         paths = [EntityPath(path=projection) for projection in projections]
-
-        # TODO rename type uri
+        # TODO(saipraneeth): rename type uri  # noqa: TD003
         schema = EntitySchema(
             type_uri="https://example.org/vocab/salesforce",
             paths=paths,

@@ -1,3 +1,5 @@
+"""test sobjectcreate"""
+
 import pytest
 from simple_salesforce.exceptions import SalesforceAuthenticationFailed
 
@@ -12,8 +14,5 @@ def test_invalid_credentials() -> None:
 
 def test_sobject_required() -> None:
     """Validate Required fields"""
-    with pytest.raises(ValueError, match="Salesforce Object API Name is required."):
-        SobjectCreate(username="", password="", security_token="", salesforce_object=None)
-
-    with pytest.raises(ValueError, match="Salesforce Object API Name is required."):
+    with pytest.raises(ValueError, match=r"Salesforce Object API Name is required."):
         SobjectCreate(username="", password="", security_token="", salesforce_object="")

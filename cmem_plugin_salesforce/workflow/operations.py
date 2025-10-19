@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 PLUGIN_DOCUMENTATION = f"""
 This task retrieves data from an incoming workflow task (such as a SPARQL query),
 and sends bulk API requests to the Salesforce Object API, in order to
-manipulate data in your organization’s Salesforce account.
+manipulate data in your organization's Salesforce account.
 
 The working model is:
 - Each entity from the input data is interpreted as a single Salesforce object of the
@@ -57,7 +57,7 @@ the workflow in order get the result of the SPARQL task as in input for this tas
 
 @Plugin(
     label="Create/Update Salesforce Objects",
-    description="Manipulate data in your organization’s Salesforce account.",
+    description="Manipulate data in your organization's Salesforce account.",
     documentation=PLUGIN_DOCUMENTATION,
     parameters=[
         PluginParameter(
@@ -104,6 +104,7 @@ class SobjectCreate(WorkflowPlugin):
         return self.salesforce
 
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> Entities | None:
+        """Execute create plugin flow"""
         summary: list[tuple[str, str]] = []
         if not inputs:
             self.log.info("No Entities found")
@@ -143,14 +144,11 @@ class SobjectCreate(WorkflowPlugin):
             )
         )
         return None
-        # return self.create_entities_from_result(results)
 
     def validate_columns(self, columns: Sequence[str]) -> None:
         """Validate the columns name against salesforce object"""
-        # TODO find an alternative to get SFType
-        # pylint: disable=unnecessary-dunder-call
-        describe = self.get_connection().__getattr__(self.salesforce_object).describe()
-        # pylint: enable=unnecessary-dunder-call
+        # TODO(saipraneeth): find an alternative to get SFType  #noqa: TD003
+        describe = self.get_connection().__getattr__(self.salesforce_object).describe()  # type: ignore[operator]
 
         object_fields = [field["name"] for field in describe["fields"]]
         columns_not_available = set(columns) - set(object_fields)
@@ -160,7 +158,7 @@ class SobjectCreate(WorkflowPlugin):
                 f"not available in Salesforce Object {self.salesforce_object}"
             )
 
-    def process(self, entities_collection: Entities):
+    def process(self, entities_collection: Entities):  # noqa: ANN201
         """Extract the data from entities and create in salesforce"""
         columns = [ep.path for ep in entities_collection.schema.paths]
         self.validate_columns(columns)
@@ -168,22 +166,18 @@ class SobjectCreate(WorkflowPlugin):
         for entity in entities_collection.entities:
             values = entity.values
             record = {}
-            i = 0
-            for column in columns:
-                if column.lower() != "id" or values[i]:
-                    record[column] = ",".join(values[i])
-                i += 1
+            for index, column in enumerate(columns):
+                if column.lower() != "id" or values[index]:
+                    record[column] = ",".join(values[index])
 
             data.append(record)
 
         self.log.info(f"Data : {data}")
-        # TODO find an alternative to get SFType
-        # pylint: disable=unnecessary-dunder-call
-        bulk_object_type: SFBulkType = self.get_connection().bulk.__getattr__(
+        # TODO(saipraneeth): find an alternative to get SFType  #noqa: TD003
+        bulk_object_type: SFBulkType = self.get_connection().bulk.__getattr__(  # type: ignore[assignment, union-attr]
             self.salesforce_object
         )
-        # pylint: enable=unnecessary-dunder-call
-        result = bulk_object_type.upsert(data=data, external_id_field="Id")
+        result = bulk_object_type.upsert(data=data, external_id_field="Id")  # type: ignore[arg-type]
 
         current_timestamp = round(time.time()) * 1000
         for res in result:
@@ -191,7 +185,7 @@ class SobjectCreate(WorkflowPlugin):
 
         return result
 
-    def create_entities_from_result(self, result: list[dict[str, Any]]):
+    def create_entities_from_result(self, result: list[dict[str, Any]]) -> Entities:
         """Create entities from result list"""
         self.log.info("Start of create_entities_from_result")
         entities = []
@@ -208,7 +202,7 @@ class SobjectCreate(WorkflowPlugin):
         )
         return Entities(entities=entities, schema=schema)
 
-    def get_summary_from_result(self, result: list[dict[str, Any]]):
+    def get_summary_from_result(self, result: list[dict[str, Any]]) -> tuple[int, int, int, str]:
         """Get summary from result list"""
         self.log.info("Start of get_summary_from_result")
         created: int = 0
