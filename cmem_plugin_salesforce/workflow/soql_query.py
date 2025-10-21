@@ -34,9 +34,9 @@ EXAMPLE_QUERY = "SELECT Contact.Firstname, Contact.Lastname FROM Contact"  # nos
 
 PLUGIN_DOCUMENTATION = f"""
 This task executes a custom Salesforce Object Query (SOQL)
-and returns sets of tabular data from your organization’s Salesforce account.
+and returns sets of tabular data from your organization's Salesforce account.
 
-> Use the Salesforce Object Query Language (SOQL) to search your organization’s
+> Use the Salesforce Object Query Language (SOQL) to search your organization's
 > Salesforce data for specific information. SOQL is similar to the SELECT statement in
 > the widely used Structured Query Language (SQL) but is designed specifically for
 > Salesforce data.
@@ -81,7 +81,7 @@ see {LINKS["SOQL_SYNTAX"]}.
 """
 
 
-def validate_credentials(username: str, password: str, security_token: str):
+def validate_credentials(username: str, password: str, security_token: str) -> None:
     """Validate Salesforce login credentials"""
     SalesforceLogin(username=username, password=password, security_token=security_token)
 
@@ -98,7 +98,7 @@ def get_projections(record: OrderedDict) -> list[str]:
     label="SOQL query (Salesforce)",
     plugin_id="cmem_plugin_salesforce-SoqlQuery",
     description="Executes a custom Salesforce Object Query (SOQL) to return"
-    " sets of data your organization’s Salesforce account.",
+    " sets of data your organization's Salesforce account.",
     documentation=PLUGIN_DOCUMENTATION,
     parameters=[
         PluginParameter(
@@ -154,6 +154,9 @@ class SoqlQuery(WorkflowPlugin):
         self.soql_query = soql_query
 
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> Entities:
+        """Execute the workflow operator"""
+        _ = inputs
+        _ = context
         self.log.info("Start Salesforce Plugin")
         salesforce = Salesforce(
             username=self.username,

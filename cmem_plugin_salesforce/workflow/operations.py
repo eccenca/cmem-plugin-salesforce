@@ -2,8 +2,8 @@
 
 import time
 import uuid
-from collections.abc import Sequence
-from typing import Any
+from collections.abc import Sequence, Iterable
+from typing import Any, TYPE_CHECKING
 
 from cmem_plugin_base.dataintegration.context import ExecutionContext, ExecutionReport
 from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
@@ -15,7 +15,9 @@ from cmem_plugin_base.dataintegration.entity import (
 )
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
 from simple_salesforce import Salesforce
-from simple_salesforce.bulk import SFBulkType
+
+if TYPE_CHECKING:
+    from simple_salesforce.bulk import SFBulkType
 
 from cmem_plugin_salesforce import (
     LINKS,
@@ -26,7 +28,7 @@ from cmem_plugin_salesforce import (
 PLUGIN_DOCUMENTATION = f"""
 This task retrieves data from an incoming workflow task (such as a SPARQL query),
 and sends bulk API requests to the Salesforce Object API, in order to
-manipulate data in your organization’s Salesforce account.
+manipulate data in your organization's Salesforce account.
 
 The working model is:
 - Each entity from the input data is interpreted as a single Salesforce object of the
@@ -55,7 +57,7 @@ the workflow in order get the result of the SPARQL task as in input for this tas
 
 @Plugin(
     label="Create/Update Salesforce Objects",
-    description="Manipulate data in your organization’s Salesforce account.",
+    description="Manipulate data in your organization's Salesforce account.",
     documentation=PLUGIN_DOCUMENTATION,
     parameters=[
         PluginParameter(
@@ -102,6 +104,7 @@ class SobjectCreate(WorkflowPlugin):
         return self.salesforce
 
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> Entities | None:
+        """Execute the workflow"""
         summary: list[tuple[str, str]] = []
         if not inputs:
             self.log.info("No Entities found")
@@ -141,9 +144,8 @@ class SobjectCreate(WorkflowPlugin):
             )
         )
         return None
-        # return self.create_entities_from_result(results)
 
-    def validate_columns(self, columns: Sequence[str]):
+    def validate_columns(self, columns: Sequence[str]) -> None:
         """Validate the columns name against salesforce object"""
         # TODO find an alternative to get SFType
         # pylint: disable=unnecessary-dunder-call
@@ -158,7 +160,7 @@ class SobjectCreate(WorkflowPlugin):
                 f"not available in Salesforce Object {self.salesforce_object}"
             )
 
-    def process(self, entities_collection: Entities):
+    def process(self, entities_collection: Entities) -> Iterable[Any]:
         """Extract the data from entities and create in salesforce"""
         columns = [ep.path for ep in entities_collection.schema.paths]
         self.validate_columns(columns)
