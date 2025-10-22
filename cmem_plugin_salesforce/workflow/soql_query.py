@@ -1,17 +1,18 @@
 """Salesforce Integration Plugin"""
+
 import io
 import json
 import uuid
 from collections import OrderedDict
-from typing import Sequence
+from collections.abc import Sequence
 
 from cmem_plugin_base.dataintegration.context import ExecutionContext
 from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
 from cmem_plugin_base.dataintegration.entity import (
-    EntitySchema,
-    EntityPath,
-    Entity,
     Entities,
+    Entity,
+    EntityPath,
+    EntitySchema,
 )
 from cmem_plugin_base.dataintegration.parameter.dataset import DatasetParameterType
 from cmem_plugin_base.dataintegration.parameter.multiline import (
@@ -23,19 +24,19 @@ from simple_salesforce import Salesforce, SalesforceLogin
 
 from cmem_plugin_salesforce import (
     LINKS,
-    USERNAME_DESCRIPTION,
     SECURITY_TOKEN_DESCRIPTION,
+    USERNAME_DESCRIPTION,
 )
 
 # fields are not validated by SOQL Parser
-EXAMPLE_FIELDS_QUERY = "SELECT FIELDS(STANDARD) FROM Lead"  # nosec
-EXAMPLE_QUERY = "SELECT Contact.Firstname, Contact.Lastname FROM Contact"  # nosec
+EXAMPLE_FIELDS_QUERY = "SELECT FIELDS(STANDARD) FROM Lead"
+EXAMPLE_QUERY = "SELECT Contact.Firstname, Contact.Lastname FROM Contact"
 
 PLUGIN_DOCUMENTATION = f"""
 This task executes a custom Salesforce Object Query (SOQL)
-and returns sets of tabular data from your organization’s Salesforce account.
+and returns sets of tabular data from your organization's Salesforce account.
 
-> Use the Salesforce Object Query Language (SOQL) to search your organization’s
+> Use the Salesforce Object Query Language (SOQL) to search your organization's
 > Salesforce data for specific information. SOQL is similar to the SELECT statement in
 > the widely used Structured Query Language (SQL) but is designed specifically for
 > Salesforce data.
@@ -61,7 +62,7 @@ Retrieve first name and last name of all Contact resources. (with parser validat
 
 Please refer to the {LINKS["OBJECT_REFERENCE"]} of the Salesforce Platform data
 model in order to get an overview of the available objects and fields.
-"""  # nosec
+"""  # noqa: S608
 
 PARSE_SOQL_DESCRIPTION = f"""
 Parse query text for validation.
@@ -80,13 +81,13 @@ see {LINKS["SOQL_SYNTAX"]}.
 """
 
 
-def validate_credentials(username: str, password: str, security_token: str):
+def validate_credentials(username: str, password: str, security_token: str) -> None:
     """Validate Salesforce login credentials"""
     SalesforceLogin(username=username, password=password, security_token=security_token)
 
 
 def get_projections(record: OrderedDict) -> list[str]:
-    """get keys from dict"""
+    """Get keys from dict"""
     projections = list(record)
     # Remove metadata keys
     projections.remove("attributes")
@@ -97,7 +98,7 @@ def get_projections(record: OrderedDict) -> list[str]:
     label="SOQL query (Salesforce)",
     plugin_id="cmem_plugin_salesforce-SoqlQuery",
     description="Executes a custom Salesforce Object Query (SOQL) to return"
-    " sets of data your organization’s Salesforce account.",
+    " sets of data your organization's Salesforce account.",
     documentation=PLUGIN_DOCUMENTATION,
     parameters=[
         PluginParameter(
@@ -152,10 +153,10 @@ class SoqlQuery(WorkflowPlugin):
         self.security_token = security_token
         self.soql_query = soql_query
 
-    def execute(
-        self, inputs: Sequence[Entities], context: ExecutionContext
-    ) -> Entities:
+    def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> Entities:
+        """Execute SOQL query plugin flow"""
         self.log.info("Start Salesforce Plugin")
+        _ = inputs, context
         salesforce = Salesforce(
             username=self.username,
             password=self.password,
@@ -168,19 +169,18 @@ class SoqlQuery(WorkflowPlugin):
         self.log.info(f"Config length: {len(self.config.get())}")
         entities = []
         for record in records:
-            entity_uri = f"urn:uuid:{str(uuid.uuid4())}"
+            entity_uri = f"urn:uuid:{uuid.uuid4()!s}"
             values = [[f"{record.pop(projection)}"] for projection in projections]
             entities.append(Entity(uri=entity_uri, values=values))
 
         paths = [EntityPath(path=projection) for projection in projections]
-
-        # TODO rename type uri
+        # TODO(saipraneeth): rename type uri  # noqa: TD003
         schema = EntitySchema(
             type_uri="https://example.org/vocab/salesforce",
             paths=paths,
         )
 
-        self.log.info(f"Happy to serve " f"{result.pop('totalSize')} salesforce data.")
+        self.log.info(f"Happy to serve {result.pop('totalSize')} salesforce data.")
         if self.dataset:
             write_to_dataset(self.dataset, io.StringIO(json.dumps(result, indent=2)))
 

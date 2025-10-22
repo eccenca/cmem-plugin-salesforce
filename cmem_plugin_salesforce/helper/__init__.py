@@ -1,4 +1,4 @@
-""" Helper classes."""
+"""Helper classes."""
 
 
 class MarkdownLink:
@@ -12,4 +12,5 @@ class MarkdownLink:
         self.label = label
 
     def __str__(self):
+        """Get string representation."""
         return f"[{self.label}]({self.url})"

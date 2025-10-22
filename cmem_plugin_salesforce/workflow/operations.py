@@ -1,10 +1,12 @@
 """Sales force CRUD operations module"""
+
 import time
 import uuid
-from typing import Sequence, Optional, Any, Tuple
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 from cmem_plugin_base.dataintegration.context import ExecutionContext, ExecutionReport
-from cmem_plugin_base.dataintegration.description import PluginParameter, Plugin
+from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
 from cmem_plugin_base.dataintegration.entity import (
     Entities,
     Entity,
@@ -13,18 +15,20 @@ from cmem_plugin_base.dataintegration.entity import (
 )
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
 from simple_salesforce import Salesforce
-from simple_salesforce.bulk import SFBulkType
 
 from cmem_plugin_salesforce import (
     LINKS,
-    USERNAME_DESCRIPTION,
     SECURITY_TOKEN_DESCRIPTION,
+    USERNAME_DESCRIPTION,
 )
+
+if TYPE_CHECKING:
+    from simple_salesforce.bulk import SFBulkType
 
 PLUGIN_DOCUMENTATION = f"""
 This task retrieves data from an incoming workflow task (such as a SPARQL query),
 and sends bulk API requests to the Salesforce Object API, in order to
-manipulate data in your organization’s Salesforce account.
+manipulate data in your organization's Salesforce account.
 
 The working model is:
 - Each entity from the input data is interpreted as a single Salesforce object of the
@@ -53,7 +57,7 @@ the workflow in order get the result of the SPARQL task as in input for this tas
 
 @Plugin(
     label="Create/Update Salesforce Objects",
-    description="Manipulate data in your organization’s Salesforce account.",
+    description="Manipulate data in your organization's Salesforce account.",
     documentation=PLUGIN_DOCUMENTATION,
     parameters=[
         PluginParameter(
@@ -99,10 +103,9 @@ class SobjectCreate(WorkflowPlugin):
         """Get salesforce connection object"""
         return self.salesforce
 
-    def execute(
-        self, inputs: Sequence[Entities], context: ExecutionContext
-    ) -> Optional[Entities]:
-        summary: list[Tuple[str, str]] = []
+    def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> Entities | None:
+        """Execute create plugin flow"""
+        summary: list[tuple[str, str]] = []
         if not inputs:
             self.log.info("No Entities found")
             return None
@@ -141,14 +144,11 @@ class SobjectCreate(WorkflowPlugin):
             )
         )
         return None
-        # return self.create_entities_from_result(results)
 
-    def validate_columns(self, columns: Sequence[str]):
+    def validate_columns(self, columns: Sequence[str]) -> None:
         """Validate the columns name against salesforce object"""
-        # TODO find an alternative to get SFType
-        # pylint: disable=unnecessary-dunder-call
-        describe = self.get_connection().__getattr__(self.salesforce_object).describe()
-        # pylint: enable=unnecessary-dunder-call
+        # TODO(saipraneeth): find an alternative to get SFType  #noqa: TD003
+        describe = self.get_connection().__getattr__(self.salesforce_object).describe()  # type: ignore[operator]
 
         object_fields = [field["name"] for field in describe["fields"]]
         columns_not_available = set(columns) - set(object_fields)
@@ -158,7 +158,7 @@ class SobjectCreate(WorkflowPlugin):
                 f"not available in Salesforce Object {self.salesforce_object}"
             )
 
-    def process(self, entities_collection: Entities):
+    def process(self, entities_collection: Entities):  # noqa: ANN201
         """Extract the data from entities and create in salesforce"""
         columns = [ep.path for ep in entities_collection.schema.paths]
         self.validate_columns(columns)
@@ -166,22 +166,18 @@ class SobjectCreate(WorkflowPlugin):
         for entity in entities_collection.entities:
             values = entity.values
             record = {}
-            i = 0
-            for column in columns:
-                if column.lower() != "id" or values[i]:
-                    record[column] = ",".join(values[i])
-                i += 1
+            for index, column in enumerate(columns):
+                if column.lower() != "id" or values[index]:
+                    record[column] = ",".join(values[index])
 
             data.append(record)
 
         self.log.info(f"Data : {data}")
-        # TODO find an alternative to get SFType
-        # pylint: disable=unnecessary-dunder-call
-        bulk_object_type: SFBulkType = self.get_connection().bulk.__getattr__(
+        # TODO(saipraneeth): find an alternative to get SFType  #noqa: TD003
+        bulk_object_type: SFBulkType = self.get_connection().bulk.__getattr__(  # type: ignore[assignment, union-attr]
             self.salesforce_object
         )
-        # pylint: enable=unnecessary-dunder-call
-        result = bulk_object_type.upsert(data=data, external_id_field="Id")
+        result = bulk_object_type.upsert(data=data, external_id_field="Id")  # type: ignore[arg-type]
 
         current_timestamp = round(time.time()) * 1000
         for res in result:
@@ -189,12 +185,12 @@ class SobjectCreate(WorkflowPlugin):
 
         return result
 
-    def create_entities_from_result(self, result: list[dict[str, Any]]):
+    def create_entities_from_result(self, result: list[dict[str, Any]]) -> Entities:
         """Create entities from result list"""
         self.log.info("Start of create_entities_from_result")
         entities = []
         for record in result:
-            entity_uri = f"urn:uuid:{str(uuid.uuid4())}"
+            entity_uri = f"urn:uuid:{uuid.uuid4()!s}"
             values: list = [[f"{record[key]}"] for key in record]
             entities.append(Entity(uri=entity_uri, values=values))
         if entities:
@@ -206,7 +202,7 @@ class SobjectCreate(WorkflowPlugin):
         )
         return Entities(entities=entities, schema=schema)
 
-    def get_summary_from_result(self, result: list[dict[str, Any]]):
+    def get_summary_from_result(self, result: list[dict[str, Any]]) -> tuple[int, int, int, str]:
         """Get summary from result list"""
         self.log.info("Start of get_summary_from_result")
         created: int = 0

@@ -1,22 +1,21 @@
 """Test the used documentation links."""
-import requests as requests
 
-from cmem_plugin_salesforce import LINKS
+from http import HTTPStatus
 
+import requests
 
-def _validate_link_list(links):
-    for key, link in links.items():
-        try:
-            response = requests.get(link.url)
-            assert (
-                response.status_code == 200
-            ), f"Documentation link not accessible: {link.url}"
-        except Exception as error:
-            assert (
-                error is None
-            ), f"Linked page not accessible {type(error)}: {link.url}"
+from cmem_plugin_salesforce import LINKS, MarkdownLink
 
 
-def test_accessible_documentation_links():
-    """This test fetches all used links to have response code 200."""
+def _validate_link_list(links: dict[str, MarkdownLink]) -> None:
+    for link in links.values():
+        response = requests.get(link.url, timeout=10)
+        response.raise_for_status()  # will raise HTTPError if not OK
+        assert response.status_code == HTTPStatus.OK, (
+            f"Documentation link not accessible: {link.url}"
+        )
+
+
+def test_accessible_documentation_links() -> None:
+    """Test fetches all used links to have response code 200."""
     _validate_link_list(LINKS)
