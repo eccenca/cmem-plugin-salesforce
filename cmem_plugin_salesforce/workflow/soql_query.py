@@ -156,7 +156,7 @@ class SoqlQuery(WorkflowPlugin):
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> Entities:
         """Execute SOQL query plugin flow"""
         self.log.info("Start Salesforce Plugin")
-        _ = inputs, context
+        _ = inputs
         salesforce = Salesforce(
             username=self.username,
             password=self.password,
@@ -186,6 +186,8 @@ class SoqlQuery(WorkflowPlugin):
 
         self.log.info(f"Happy to serve {result.pop('totalSize')} salesforce data.")
         if self.dataset:
-            write_to_dataset(self.dataset, io.BytesIO(dataset_content.encode("utf-8")))
+            write_to_dataset(
+                self.dataset, io.BytesIO(dataset_content.encode("utf-8")), context=context.user
+            )
 
         return Entities(entities=entities, schema=schema)

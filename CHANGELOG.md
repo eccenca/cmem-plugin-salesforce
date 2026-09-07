@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - The dataset write also no longer converts non-ASCII characters to unicode escape sequences,
   and no longer risks truncating multi-byte UTF-8 content (switched from a text stream to a
   byte stream, matching what the underlying upload API expects)
+- The dataset write previously never worked at all: it never passed the execution context
+  through, so it always failed with "No UserContext given." before writing anything
 
 ## [2.2.0] 2026-08-05
 

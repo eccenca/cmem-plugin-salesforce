@@ -135,10 +135,11 @@ def test_soql() -> None:
 def test_soql_writes_full_unescaped_result_to_dataset() -> None:
     """Test that the dataset write contains the real records, with unicode preserved
 
-    Guards against two bugs: records/totalSize used to be popped out of the response
+    Guards against three bugs: records/totalSize used to be popped out of the response
     before it reached the dataset write, so the file always ended up as just
-    {"done": true} - and json.dumps() without ensure_ascii=False escaped non-ASCII
-    characters like the ones in SAMPLE_DATA's Description field.
+    {"done": true}; json.dumps() without ensure_ascii=False escaped non-ASCII characters
+    like the ones in SAMPLE_DATA's Description field; and write_to_dataset() was never
+    given a context, so it always raised "No UserContext given." before writing anything.
     """
     sf_config = get_salesforce_config()
     query = (
@@ -150,7 +151,7 @@ def test_soql_writes_full_unescaped_result_to_dataset() -> None:
         security_token=sf_config["security_token"],
         soql_query=query,
         dataset=f"{DATASET_PROJECT_NAME}:{DATASET_NAME}",
-    ).execute(None, TestExecutionContext)  # type: ignore[arg-type]
+    ).execute(None, TestExecutionContext())  # type: ignore[arg-type]
 
     raw_content = (
         get_cmem_client().files.read(f"{DATASET_PROJECT_NAME}:{DATASET_FILE}").decode("utf-8")
