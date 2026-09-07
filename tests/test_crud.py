@@ -152,9 +152,9 @@ def test_soql_writes_full_unescaped_result_to_dataset() -> None:
         dataset=f"{DATASET_PROJECT_NAME}:{DATASET_NAME}",
     ).execute(None, TestExecutionContext)  # type: ignore[arg-type]
 
-    raw_content = get_cmem_client().files.read(
-        f"{DATASET_PROJECT_NAME}:{DATASET_FILE}"
-    ).decode("utf-8")
+    raw_content = (
+        get_cmem_client().files.read(f"{DATASET_PROJECT_NAME}:{DATASET_FILE}").decode("utf-8")
+    )
     assert "\\u00e9" not in raw_content  # é
     assert "\\u00fc" not in raw_content  # ü
     assert "\\u00f6" not in raw_content  # ö
