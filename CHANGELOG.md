@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - updated dependencies and template
 
+### Fixed
+
+- SOQL query task's "Dataset" output previously always wrote just `{"done": true}`, since
+  `records` and `totalSize` were popped out of the response before the write; it now writes
+  the actual query result
+- The dataset write also no longer converts non-ASCII characters to unicode escape sequences,
+  and no longer risks truncating multi-byte UTF-8 content (switched from a text stream to a
+  byte stream, matching what the underlying upload API expects)
+
 ## [2.2.0] 2026-08-05
 
 ### Changed

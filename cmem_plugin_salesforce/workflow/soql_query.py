@@ -164,6 +164,10 @@ class SoqlQuery(WorkflowPlugin):
         )
 
         result = salesforce.query_all(self.soql_query)
+        # Snapshot the full response before records/totalSize are popped below and
+        # before the entity-building loop pops every field out of each record dict -
+        # otherwise the dataset write below would only ever see {"done": true}.
+        dataset_content = json.dumps(result, indent=2, ensure_ascii=False)
         records = result.pop("records")
         projections = get_projections(records[0])
         self.log.info(f"Config length: {len(self.config.get())}")
@@ -182,6 +186,6 @@ class SoqlQuery(WorkflowPlugin):
 
         self.log.info(f"Happy to serve {result.pop('totalSize')} salesforce data.")
         if self.dataset:
-            write_to_dataset(self.dataset, io.StringIO(json.dumps(result, indent=2)))
+            write_to_dataset(self.dataset, io.BytesIO(dataset_content.encode("utf-8")))
 
         return Entities(entities=entities, schema=schema)
