@@ -9,6 +9,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Changed
 
 - updated dependencies and template
+- "SOQL query (Salesforce)" task documentation and "Dataset" parameter description no
+  longer describe a "Parse SOQL" validation option, which does not exist in this
+  version of the task; documentation now notes that the task ignores any input
+  entities, that a query matching no records fails with an error, and that the
+  dataset write includes the complete raw query response rather than just the
+  fetched entities
 
 ### Fixed
 

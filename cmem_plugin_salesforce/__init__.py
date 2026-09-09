@@ -19,10 +19,6 @@ LINKS = {
         "object_reference.meta/object_reference/sforce_api_objects_list.htm",
         "Salesforce Standard Objects list",
     ),
-    "DEV_CONSOLE": MarkdownLink(
-        "https://help.salesforce.com/s/articleView?id=sf.code_dev_console.htm&type=5",
-        "Salesforce Developer Console",
-    ),
     "TOKEN_DOCU": MarkdownLink(
         "https://help.salesforce.com/s/articleView?id=sf.user_security_token.htm&type=5",
         "Salesforce Reset Token Documentation",
