@@ -28,7 +28,6 @@ from cmem_plugin_salesforce import (
     USERNAME_DESCRIPTION,
 )
 
-# fields are not validated by SOQL Parser
 EXAMPLE_FIELDS_QUERY = "SELECT FIELDS(STANDARD) FROM Lead"
 EXAMPLE_QUERY = "SELECT Contact.Firstname, Contact.Lastname FROM Contact"
 
@@ -46,16 +45,17 @@ SOQL uses the SELECT statement combined with filtering statements to return sets
 data, which can optionally be ordered. For a complete description of the syntax, see
 {LINKS["SOQL_SYNTAX"]}.
 
-In the Advanced Options section, you can enable / disable the validation of your
-SOQL Query. By default, this Parse SOQL option is set `True` (enabled).
+This task ignores any entities it receives; the query comes only from the SOQL Query
+parameter. A query that matches no records fails with an error rather than returning
+an empty result.
 
 Examples:
 
-Retrieve all standard fields from all Lead resources. (without parser validation)
+Retrieve all standard fields from all Lead resources.
 ```
 {EXAMPLE_FIELDS_QUERY}
 ```
-Retrieve first name and last name of all Contact resources. (with parser validation)
+Retrieve first name and last name of all Contact resources.
 ```
 {EXAMPLE_QUERY}
 ```
@@ -63,14 +63,6 @@ Retrieve first name and last name of all Contact resources. (with parser validat
 Please refer to the {LINKS["OBJECT_REFERENCE"]} of the Salesforce Platform data
 model in order to get an overview of the available objects and fields.
 """  # noqa: S608
-
-PARSE_SOQL_DESCRIPTION = f"""
-Parse query text for validation.
-
-To avoid mistakes, the plugin tries to validate the given query text before sending it
-to Salesforce. Turn off this feature, in case you are encountering false validation
-errors. You can always validate your query in the {LINKS["DEV_CONSOLE"]}.
-"""
 
 SOQL_DESCRIPTION = f"""
 The query text of your SOQL query.
@@ -124,9 +116,9 @@ def get_projections(record: OrderedDict) -> list[str]:
         PluginParameter(
             name="dataset",
             label="Dataset",
-            description="In addition to have direct output of the fetched entities of"
-            " your SOQL query, you can directly write the response to a"
-            " JSON dataset (mostly for debugging purpose).",
+            description="Besides the direct output of the fetched entities, write the"
+            " complete raw query response - including Salesforce's internal metadata"
+            " for each record - to a JSON dataset (mostly for debugging purposes).",
             param_type=DatasetParameterType(dataset_type="json"),
             advanced=True,
             default_value="",
@@ -156,7 +148,7 @@ class SoqlQuery(WorkflowPlugin):
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> Entities:
         """Execute SOQL query plugin flow"""
         self.log.info("Start Salesforce Plugin")
-        _ = inputs, context
+        _ = inputs
         salesforce = Salesforce(
             username=self.username,
             password=self.password,
@@ -164,6 +156,10 @@ class SoqlQuery(WorkflowPlugin):
         )
 
         result = salesforce.query_all(self.soql_query)
+        # Snapshot the full response before records/totalSize are popped below and
+        # before the entity-building loop pops every field out of each record dict -
+        # otherwise the dataset write below would only ever see {"done": true}.
+        dataset_content = json.dumps(result, indent=2, ensure_ascii=False)
         records = result.pop("records")
         projections = get_projections(records[0])
         self.log.info(f"Config length: {len(self.config.get())}")
@@ -182,6 +178,8 @@ class SoqlQuery(WorkflowPlugin):
 
         self.log.info(f"Happy to serve {result.pop('totalSize')} salesforce data.")
         if self.dataset:
-            write_to_dataset(self.dataset, io.StringIO(json.dumps(result, indent=2)))
+            write_to_dataset(
+                self.dataset, io.BytesIO(dataset_content.encode("utf-8")), context=context.user
+            )
 
         return Entities(entities=entities, schema=schema)
